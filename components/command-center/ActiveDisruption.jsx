@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import { ExplainableRiskScore } from "@/components/ui/ExplainableRiskScore";
 import { AlertTriangle, Clock, Zap } from "lucide-react";
 
@@ -64,9 +65,14 @@ export function ActiveDisruption({ simulationState }) {
 
       <div className="mb-6">
         <span className="text-[11px] font-bold text-slate-500 uppercase block mb-1">Recommended Action</span>
-        <span className={`inline-flex font-bold tracking-widest uppercase ${isResolved ? 'text-emerald-600' : 'text-blue-600'}`}>
-          {isResolved ? 'REROUTED' : 'REROUTE'}
-        </span>
+        <div className="flex items-center justify-between">
+          <span className={`inline-flex font-bold tracking-widest uppercase ${isResolved ? 'text-emerald-600' : 'text-blue-600'}`}>
+            {isResolved ? 'REROUTED' : 'REROUTE'}
+          </span>
+          <Link href="/investigation" className="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-indigo-600 transition-colors flex items-center gap-1 border border-slate-200 hover:border-indigo-200 px-2.5 py-1 rounded-full bg-slate-50 hover:bg-indigo-50">
+            Investigate Case
+          </Link>
+        </div>
       </div>
 
       {/* 4 Info Cards (WHAT, WHY, IMPACT, ACTION) */}

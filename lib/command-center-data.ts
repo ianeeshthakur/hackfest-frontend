@@ -354,5 +354,13 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Global Logistics",
     href: "/global-logistics",
     iconName: "Network",
+    variant: "ghost",
+  },
+  {
+    id: "nav-investigation",
+    label: "Investigation",
+    href: "/investigation",
+    iconName: "Search",
+    variant: "ghost",
   },
 ];

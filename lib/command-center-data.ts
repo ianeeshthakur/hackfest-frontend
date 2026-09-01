@@ -371,4 +371,11 @@ export const NAV_ITEMS: NavItem[] = [
     iconName: "BarChart2",
     variant: "ghost",
   },
+  {
+    id: "nav-recovery",
+    label: "Recovery Scenarios",
+    href: "/recovery",
+    iconName: "RefreshCcw",
+    variant: "ghost",
+  },
 ];

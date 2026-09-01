@@ -1,0 +1,157 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #0B0F17;
+    --foreground: #F1F5F9;
+    --panel: #111826;
+    --border: #1F2937;
+    --teal: #2DD4BF;
+    --amber: #F5A524;
+    --red: #F7768E;
+    --phosphor: #4ADE80;
+  }
+
+  * {
+    border-color: #1F2937;
+  }
+
+  body {
+    background-color: #0B0F17;
+    color: #F1F5F9;
+    font-family: var(--font-body), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    overflow-x: hidden;
+  }
+}
+
+/* Custom minimal scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0B0F17;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1F2937;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #374151;
+}
+
+/* Focus outline helper */
+*:focus-visible {
+  outline: 2px solid #2DD4BF;
+  outline-offset: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TextileMesh AI — Command Center Light Theme
+   All styles are scoped under .cc-light-root so the dark ResiliChain
+   dashboard (app/page.tsx) is completely unaffected.
+───────────────────────────────────────────────────────────────────────────── */
+.cc-light-root {
+  color-scheme: light;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+/* Reset the dark global border color inside the CC */
+.cc-light-root * {
+  border-color: #e2e8f0;
+}
+
+/* Light scrollbar for the CC */
+.cc-light-root ::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+.cc-light-root ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+
+.cc-light-root ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Ensure Tailwind bg-white, bg-slate-*, text-slate-* etc. render correctly */
+.cc-light-root .bg-white {
+  background-color: #ffffff;
+}
+
+.cc-light-root .bg-slate-50 {
+  background-color: #f8fafc;
+}
+
+.cc-light-root .font-display {
+  font-family: var(--font-display), "Space Grotesk", sans-serif;
+}
+
+.cc-light-root .font-body {
+  font-family: var(--font-body), "Inter", sans-serif;
+}
+
+.cc-light-root .font-mono {
+  font-family: var(--font-mono), "IBM Plex Mono", monospace;
+}
+
+/* ─── Textile MSME Cluster Map — Leaflet overrides ──────────────────────────── */
+
+/* Hide Leaflet default close button (we use our own X) */
+.leaflet-popup-close-button {
+  display: none !important;
+}
+
+/* Popup wrapper — clean white card */
+.leaflet-popup-content-wrapper {
+  padding: 0 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12) !important;
+  border: 1px solid #e2e8f0 !important;
+  overflow: hidden !important;
+  font-family: var(--font-body), Inter, sans-serif !important;
+}
+
+.leaflet-popup-content {
+  margin: 12px !important;
+  font-family: var(--font-body), Inter, sans-serif !important;
+  line-height: 1.5 !important;
+  min-width: 0 !important;
+}
+
+/* Hide popup triangle tip */
+.leaflet-popup-tip-container {
+  display: none !important;
+}
+
+/* Factory hover tooltip — dark pill */
+.factory-tooltip.leaflet-tooltip {
+  border: none !important;
+  background: #1e293b !important;
+  color: white !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+  border-radius: 6px !important;
+  padding: 5px 9px !important;
+  font-family: var(--font-body), Inter, sans-serif !important;
+}
+
+.factory-tooltip.leaflet-tooltip::before {
+  display: none !important;
+}
+
+/* Remove Leaflet container focus ring */
+.leaflet-container:focus {
+  outline: none !important;
+}
+
+/* DOWN factory pulse ring animation */
+@keyframes ping {
+  0%        { transform: scale(1);   opacity: 0.55; }
+  70%, 100% { transform: scale(2.4); opacity: 0;    }
+}

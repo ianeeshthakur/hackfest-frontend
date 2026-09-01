@@ -328,6 +328,7 @@ export interface NavItem {
   iconName: string;
   isActive?: boolean;
   badge?: number;
+  variant?: string;
 }
 
 export const NAV_ITEMS: NavItem[] = [

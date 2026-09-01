@@ -13,9 +13,14 @@ const STATUS_CONFIG: Record<StatusKey, { label: string; color: string; bg: strin
   DOWN:        { label: "Down",        color: "#dc2626", bg: "#fef2f2" },
 };
 
-interface Props { factory: Factory; onClose: () => void; }
+interface Props { 
+  factory: Factory; 
+  onClose: () => void;
+  onViewFactory: () => void;
+  onFindAlternatives: () => void;
+}
 
-export function FactoryPopup({ factory, onClose }: Props) {
+export function FactoryPopup({ factory, onClose, onViewFactory, onFindAlternatives }: Props) {
   const status = STATUS_CONFIG[factory.status as StatusKey] ?? STATUS_CONFIG.OPERATIONAL;
   const cluster = (clusters as Cluster[]).find((c) => c.id === factory.clusterId);
 
@@ -46,10 +51,10 @@ export function FactoryPopup({ factory, onClose }: Props) {
         } />
         <Row label="Capacity" value={`${factory.capacity.toLocaleString()} units/day`} />
         
-        {/* Placeholders for fields to be hydrated by Spring Boot API later */}
-        <Row label="Current Load" value={`${80 + (factory.name.length % 15)}%`} />
+        {/* These fields are now hydrated from real data */}
+        <Row label="Current Load" value={`${factory.currentLoad}%`} />
         <Row label="Power" value={factory.status === "DOWN" ? "Offline" : "Online"} />
-        <Row label={factory.status === "DOWN" ? "Orders affected" : "Orders"} value={`${(factory.name.length % 5) + 2} ${factory.status === "DOWN" ? "" : "active"}`} />
+        <Row label={factory.status === "DOWN" ? "Orders affected" : "Orders"} value={`${factory.orders} ${factory.status === "DOWN" ? "" : "active"}`} />
 
         {factory.disruption && (
           <Row label="Issue" value={<span className="text-red-600 text-[11px]">{factory.disruption}</span>} />
@@ -57,13 +62,13 @@ export function FactoryPopup({ factory, onClose }: Props) {
       </div>
 
       <div className="flex gap-2 pt-2 border-t border-slate-100">
-        <button id={`view-factory-${factory.id}`}
+        <button id={`view-factory-${factory.id}`} onClick={onViewFactory}
           className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-900 text-white text-[11px] font-medium rounded-lg hover:bg-slate-700 transition-colors">
           <ExternalLink className="h-3 w-3" />View Factory
         </button>
-        <button id={`find-alternatives-${factory.id}`}
+        <button id={`find-alternatives-${factory.id}`} onClick={onFindAlternatives}
           className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white text-slate-700 text-[11px] font-medium rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
-          <ArrowRightLeft className="h-3 w-3" />Alternatives
+          <ArrowRightLeft className="h-3 w-3" />Find Alternatives
         </button>
       </div>
     </div>

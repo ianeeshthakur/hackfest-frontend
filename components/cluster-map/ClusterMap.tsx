@@ -35,6 +35,9 @@ interface Factory {
   longitude: number;
   status: string;
   capacity: number;
+  currentLoad: number;
+  orders: number;
+  token: string;
   disruption: string | null;
 }
 
@@ -60,6 +63,12 @@ interface ClusterMapProps {
   mapView: MapView;
   onMapViewChange?: (v: MapView) => void;
   onReset: () => void;
+  onViewFactory: (factoryId: string) => void;
+  onFindAlternatives: (factoryId: string) => void;
+  selectedFactoryId: string | null;
+  onSelectFactory: (id: string | null) => void;
+  clusterPopupInfo: { cluster: ClusterData; position: { lat: number; lng: number } } | null;
+  onSetClusterPopupInfo: (info: { cluster: ClusterData; position: { lat: number; lng: number } } | null) => void;
 }
 
 // ─── Child: flies the map to a new view when mapView prop changes ─────────────
@@ -129,14 +138,14 @@ export default function ClusterMap({
   selectedClusterId,
   mapView,
   onReset,
+  onViewFactory,
+  onFindAlternatives,
+  selectedFactoryId,
+  onSelectFactory,
+  clusterPopupInfo,
+  onSetClusterPopupInfo,
 }: ClusterMapProps) {
   const mapRef = useRef<L.Map | null>(null);
-
-  const [selectedFactoryId, setSelectedFactoryId] = useState<string | null>(null);
-  const [clusterPopupInfo, setClusterPopupInfo] = useState<{
-    cluster: ClusterData;
-    position: { lat: number; lng: number };
-  } | null>(null);
 
   // Derive the selected factory object from id
   const selectedFactory = filteredFactories.find((f) => f.id === selectedFactoryId) ?? null;
@@ -144,36 +153,36 @@ export default function ClusterMap({
   // Clear selected factory when it is filtered out
   useEffect(() => {
     if (selectedFactoryId && !filteredFactories.find((f) => f.id === selectedFactoryId)) {
-      setSelectedFactoryId(null);
+      onSelectFactory(null);
     }
-  }, [filteredFactories, selectedFactoryId]);
+  }, [filteredFactories, selectedFactoryId, onSelectFactory]);
 
   const handleFactoryClick = useCallback(
     (e: { originalEvent?: Event }, factory: Factory) => {
       e.originalEvent?.stopPropagation();
-      setSelectedFactoryId(factory.id);
-      setClusterPopupInfo(null);
+      onSelectFactory(factory.id);
+      onSetClusterPopupInfo(null);
     },
-    []
+    [onSelectFactory, onSetClusterPopupInfo]
   );
 
   const handleClusterClick = useCallback((clusterId: string) => {
     const cluster = (clusters as ClusterData[]).find((c) => c.id === clusterId);
     if (!cluster) return;
-    setClusterPopupInfo({ cluster, position: { lat: cluster.lat, lng: cluster.lng } });
-    setSelectedFactoryId(null);
-  }, []);
+    onSetClusterPopupInfo({ cluster, position: { lat: cluster.lat, lng: cluster.lng } });
+    onSelectFactory(null);
+  }, [onSetClusterPopupInfo, onSelectFactory]);
 
   const handleMapClick = useCallback(() => {
-    setSelectedFactoryId(null);
-    setClusterPopupInfo(null);
-  }, []);
+    onSelectFactory(null);
+    onSetClusterPopupInfo(null);
+  }, [onSelectFactory, onSetClusterPopupInfo]);
 
   const handleReset = useCallback(() => {
-    setSelectedFactoryId(null);
-    setClusterPopupInfo(null);
+    onSelectFactory(null);
+    onSetClusterPopupInfo(null);
     onReset();
-  }, [onReset]);
+  }, [onReset, onSelectFactory, onSetClusterPopupInfo]);
 
   return (
     <div className="absolute inset-0">
@@ -292,7 +301,7 @@ export default function ClusterMap({
           <Popup
             key={selectedFactory.id}
             position={[selectedFactory.latitude, selectedFactory.longitude]}
-            eventHandlers={{ remove: () => setSelectedFactoryId(null) }}
+            eventHandlers={{ remove: () => onSelectFactory(null) }}
             closeButton={false}
             maxWidth={280}
             offset={[0, -16]}
@@ -301,7 +310,9 @@ export default function ClusterMap({
             <FactoryPopup
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               factory={selectedFactory as any}
-              onClose={() => setSelectedFactoryId(null)}
+              onClose={() => onSelectFactory(null)}
+              onViewFactory={() => onViewFactory(selectedFactory.id)}
+              onFindAlternatives={() => onFindAlternatives(selectedFactory.id)}
             />
           </Popup>
         )}
@@ -311,7 +322,7 @@ export default function ClusterMap({
           <Popup
             key={clusterPopupInfo.cluster.id}
             position={[clusterPopupInfo.position.lat, clusterPopupInfo.position.lng]}
-            eventHandlers={{ remove: () => setClusterPopupInfo(null) }}
+            eventHandlers={{ remove: () => onSetClusterPopupInfo(null) }}
             closeButton={false}
             maxWidth={240}
             autoPan={true}
@@ -320,7 +331,7 @@ export default function ClusterMap({
               cluster={clusterPopupInfo.cluster}
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               allFactories={filteredFactories as any[]}
-              onClose={() => setClusterPopupInfo(null)}
+              onClose={() => onSetClusterPopupInfo(null)}
             />
           </Popup>
         )}

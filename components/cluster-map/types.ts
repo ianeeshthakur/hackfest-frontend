@@ -7,6 +7,9 @@ export interface Factory {
   longitude: number;
   status: "OPERATIONAL" | "WARNING" | "DOWN";
   capacity: number;
+  currentLoad: number;
+  orders: number;
+  token: string;
   disruption: string | null;
 }
 

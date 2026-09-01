@@ -331,7 +331,28 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { id: "command-center", label: "Command Center", href: "/command-center", iconName: "LayoutDashboard", isActive: true },
-  { id: "cluster-map", label: "Cluster Map", href: "/cluster-map", iconName: "Map" },
-  { id: "global-logistics", label: "Global Logistics", href: "/global-logistics", iconName: "Network" },
+  {
+    id: "nav-cc",
+    label: "Command Center",
+    href: "/command-center",
+    iconName: "LayoutDashboard",
+  },
+  {
+    id: "nav-map",
+    label: "Cluster Map",
+    href: "/cluster-map",
+    iconName: "Map",
+  },
+  {
+    id: "nav-factory",
+    label: "Factory Dashboard",
+    href: "/factory-owner",
+    iconName: "Factory",
+  },
+  {
+    id: "nav-logistics",
+    label: "Global Logistics",
+    href: "/global-logistics",
+    iconName: "Network",
+  },
 ];

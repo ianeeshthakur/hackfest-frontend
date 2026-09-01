@@ -66,16 +66,9 @@ export default function ClusterMapPage() {
           onFiltersChange={setFilters}
           onReset={handleReset}
         />
-        <div className="flex-1 relative">
-          <ClusterMap
-            filteredFactories={filteredFactories}
-            selectedClusterId={selectedClusterId}
-            mapView={mapView}
-            onReset={handleReset}
-          />
-
-          {/* Left floating panel */}
-          <div className="absolute top-4 left-4 z-10 w-64">
+        <div className="flex flex-1 overflow-hidden">
+          {/* Left Panel */}
+          <div className="w-64 bg-slate-50 border-r border-slate-200 overflow-y-auto p-4 flex flex-col shrink-0">
             <ClusterOverview
               factories={filteredFactories}
               selectedClusterId={selectedClusterId}
@@ -85,17 +78,27 @@ export default function ClusterMapPage() {
             />
           </div>
 
-          {/* Right floating panel */}
-          <div className="absolute top-4 right-4 z-10 w-52">
+          {/* Map Area */}
+          <div className="flex-1 relative overflow-hidden">
+            <ClusterMap
+              filteredFactories={filteredFactories}
+              selectedClusterId={selectedClusterId}
+              mapView={mapView}
+              onReset={handleReset}
+            />
+
+            {/* Bottom-right legend */}
+            <div className="absolute bottom-8 right-4 z-10">
+              <MapLegend />
+            </div>
+          </div>
+
+          {/* Right Panel */}
+          <div className="w-64 bg-slate-50 border-l border-slate-200 overflow-y-auto p-4 flex flex-col shrink-0">
             <OverallStatus
               factories={filteredFactories}
               totalClusters={clusters.length}
             />
-          </div>
-
-          {/* Bottom-right legend */}
-          <div className="absolute bottom-8 right-4 z-10">
-            <MapLegend />
           </div>
         </div>
       </div>

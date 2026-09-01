@@ -45,6 +45,12 @@ export function FactoryPopup({ factory, onClose }: Props) {
           </span>
         } />
         <Row label="Capacity" value={`${factory.capacity.toLocaleString()} units/day`} />
+        
+        {/* Placeholders for fields to be hydrated by Spring Boot API later */}
+        <Row label="Current Load" value={`${80 + (factory.name.length % 15)}%`} />
+        <Row label="Power" value={factory.status === "DOWN" ? "Offline" : "Online"} />
+        <Row label={factory.status === "DOWN" ? "Orders affected" : "Orders"} value={`${(factory.name.length % 5) + 2} ${factory.status === "DOWN" ? "" : "active"}`} />
+
         {factory.disruption && (
           <Row label="Issue" value={<span className="text-red-600 text-[11px]">{factory.disruption}</span>} />
         )}

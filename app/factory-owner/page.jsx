@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { Sidebar } from "@/components/command-center/Sidebar";
 import { factories, simulateDisruption } from "@/lib/clusterData";
-import { Activity, Zap, Users, Factory, Package, AlertTriangle, Play } from "lucide-react";
+import { Activity, Zap, Users, Factory, Package, AlertTriangle, Play, ShieldAlert } from "lucide-react";
+import { ExplainableRiskScore } from "@/components/ui/ExplainableRiskScore";
 
 export default function FactoryOwnerDashboard() {
   // Hardcoded to F-013 (Tiruppur Cotton Spinning Mill) to act as "Suresh Textiles"
@@ -25,7 +26,8 @@ export default function FactoryOwnerDashboard() {
     workerAvailability: 94,
     powerStatus: "STABLE",
     capacityUtil: 78,
-    orderLoad: 82
+    orderLoad: 82,
+    factoryRisk: 12
   });
 
   useEffect(() => {
@@ -52,7 +54,8 @@ export default function FactoryOwnerDashboard() {
         workerAvailability: 94,
         powerStatus: "DISRUPTED",
         capacityUtil: 50,
-        orderLoad: 82
+        orderLoad: 82,
+        factoryRisk: 78
       });
       
       setOrders(prev => prev.map(o => 
@@ -64,6 +67,7 @@ export default function FactoryOwnerDashboard() {
         ...metrics,
         workerAvailability: 64,
         capacityUtil: 60,
+        factoryRisk: 45
       });
       setOrders(prev => prev.map(o => 
         o.id === "TX-2048" ? { ...o, risk: 55, status: "DELAYED" } : o
@@ -74,6 +78,7 @@ export default function FactoryOwnerDashboard() {
         ...metrics,
         capacityUtil: 40,
         machineUptime: 45,
+        factoryRisk: 85
       });
       setOrders(prev => prev.map(o => ({ ...o, risk: 80, status: "AT RISK" })));
     }
@@ -88,7 +93,8 @@ export default function FactoryOwnerDashboard() {
       workerAvailability: 94,
       powerStatus: "STABLE",
       capacityUtil: 78,
-      orderLoad: 82
+      orderLoad: 82,
+      factoryRisk: 12
     });
     setOrders(prev => prev.map(o => ({ ...o, risk: Math.floor(Math.random()*15), status: "ON TRACK" })));
   };
@@ -168,6 +174,13 @@ export default function FactoryOwnerDashboard() {
                 <MetricRow label="Power Status" value={metrics.powerStatus} icon={<Zap className="h-4 w-4" />} isBad={metrics.powerStatus === "DISRUPTED"} highlight />
                 <MetricRow label="Capacity Utilization" value={`${metrics.capacityUtil}%`} icon={<Activity className="h-4 w-4" />} isBad={metrics.capacityUtil < 60} />
                 <MetricRow label="Order Load" value={`${metrics.orderLoad}%`} icon={<Package className="h-4 w-4" />} />
+                <div className="pt-2 mt-2 border-t border-slate-800">
+                  <MetricRow 
+                    label="Factory Risk Score" 
+                    value={<ExplainableRiskScore score={metrics.factoryRisk} type="Factory" />} 
+                    icon={<ShieldAlert className="h-4 w-4" />} 
+                  />
+                </div>
               </div>
             </div>
 
@@ -236,9 +249,7 @@ export default function FactoryOwnerDashboard() {
                           </div>
                         </td>
                         <td className="py-4 px-5 text-sm">
-                          <span className={`${order.risk > 50 ? 'text-red-400 font-semibold' : 'text-slate-400'}`}>
-                            {order.risk}/100
-                          </span>
+                          <ExplainableRiskScore score={order.risk} type="Order" />
                         </td>
                         <td className="py-4 px-5">
                           <span className={`px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold rounded-full border ${

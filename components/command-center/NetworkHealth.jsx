@@ -1,4 +1,5 @@
 import React from "react";
+import { ExplainableRiskScore } from "@/components/ui/ExplainableRiskScore";
 
 export function NetworkHealth({ metrics }) {
   // A simple SVG heartbeat line that subtly animates
@@ -34,6 +35,21 @@ export function NetworkHealth({ metrics }) {
         <div className="flex flex-col">
           <span className="text-[11px] text-slate-500 uppercase font-semibold">Disrupted</span>
           <span className="text-[15px] font-bold text-red-600 transition-all duration-500">{metrics.disrupted}</span>
+        </div>
+      </div>
+
+      <div className="pt-4 border-t border-slate-100 mb-6 flex justify-between">
+        <div className="flex flex-col">
+          <span className="text-[10px] text-slate-500 uppercase font-semibold mb-1">Network Risk</span>
+          <ExplainableRiskScore score={metrics.networkHealth < 90 ? 68 : 15} type="Network" />
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[10px] text-slate-500 uppercase font-semibold mb-1">Supplier Risk</span>
+          <ExplainableRiskScore score={metrics.networkHealth < 90 ? 74 : 12} type="Supplier" />
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[10px] text-slate-500 uppercase font-semibold mb-1">Recovery Risk</span>
+          <ExplainableRiskScore score={metrics.networkHealth < 90 ? 82 : 8} type="Recovery" />
         </div>
       </div>
 

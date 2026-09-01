@@ -364,4 +364,11 @@ export const NAV_ITEMS: NavItem[] = [
     iconName: "Search",
     variant: "ghost",
   },
+  {
+    id: "nav-impact",
+    label: "Impact & Inventory",
+    href: "/impact",
+    iconName: "BarChart2",
+    variant: "ghost",
+  },
 ];

@@ -1,5 +1,6 @@
 import React from "react";
-import { ACTIVE_DISRUPTION_DATA } from "@/lib/commandCenterData";
+import { ExplainableRiskScore } from "@/components/ui/ExplainableRiskScore";
+import { AlertTriangle, Clock, Zap } from "lucide-react";
 
 export function ActiveDisruption({ simulationState }) {
   if (simulationState === "IDLE") return null;
@@ -7,53 +8,87 @@ export function ActiveDisruption({ simulationState }) {
   const isResolved = simulationState === "RESOLVED";
 
   return (
-    <div className={`p-5 rounded-xl border shadow-sm transition-colors duration-500 ${
-      isResolved ? "bg-emerald-50 border-emerald-200" : "bg-white border-red-200"
+    <div className={`p-6 rounded-xl border shadow-sm transition-all duration-500 ${
+      isResolved ? "bg-emerald-50/50 border-emerald-200" : "bg-white border-red-200"
     }`}>
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <div className="flex flex-col">
-            <span className="text-[11px] font-bold tracking-wider text-slate-500">
-              {ACTIVE_DISRUPTION_DATA.unitName}
-            </span>
-            <span className={`text-[15px] font-bold tracking-tight mt-0.5 ${
-              isResolved ? "text-emerald-700" : "text-slate-900"
-            }`}>
-              {isResolved ? "RESOLVED" : ACTIVE_DISRUPTION_DATA.title}
-            </span>
-          </div>
+      {/* Header Section */}
+      <div className="flex items-start justify-between mb-5">
+        <div className="flex flex-col">
+          <span className="text-[11px] font-bold tracking-wider text-slate-500 mb-1">
+            ACTIVE DISRUPTION
+          </span>
+          <span className={`text-lg font-bold tracking-tight ${
+            isResolved ? "text-emerald-700" : "text-slate-900"
+          }`}>
+            Case: TL-4821
+          </span>
         </div>
         {!isResolved ? (
-          <span className="inline-flex items-center px-2 py-1 rounded text-[11px] font-bold bg-red-100 text-red-700">
-            {ACTIVE_DISRUPTION_DATA.severity}
-          </span>
-        ) : (
-          <span className="inline-flex items-center px-2 py-1 rounded text-[11px] font-bold bg-emerald-100 text-emerald-700">
-            SUCCESS
-          </span>
-        )}
-      </div>
-      
-      {!isResolved ? (
-        <>
-          <p className="text-[13px] text-slate-600 leading-relaxed mb-4">
-            {ACTIVE_DISRUPTION_DATA.description}
-          </p>
-          <div className="flex items-center gap-2 p-2.5 rounded bg-red-50/50 border border-red-100/50">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-red-100 text-red-700 text-[11px] font-bold">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
             </span>
-            <span className="text-[12px] font-medium text-red-700">
-              {ACTIVE_DISRUPTION_DATA.missedHeartbeats} missed heartbeats — unit unresponsive
-            </span>
-          </div>
-        </>
-      ) : (
-        <p className="text-[13px] text-emerald-700 leading-relaxed">
-          Orders successfully rerouted. Production capacity has been balanced across available clusters.
-        </p>
-      )}
+            SEVERITY: HIGH
+          </span>
+        ) : (
+          <span className="inline-flex items-center px-2.5 py-1 rounded bg-emerald-100 text-emerald-700 text-[11px] font-bold">
+            RESOLVED
+          </span>
+        )}
+      </div>
+      
+      {/* Core Metrics */}
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="flex flex-col p-3 rounded-lg bg-slate-50 border border-slate-100">
+          <span className="text-[10px] uppercase font-bold text-slate-500 mb-1">Risk</span>
+          <ExplainableRiskScore score={isResolved ? 24 : 72} type="Factory" className="-ml-1" />
+        </div>
+        <div className="flex flex-col p-3 rounded-lg bg-slate-50 border border-slate-100">
+          <span className="text-[10px] uppercase font-bold text-slate-500 mb-1">Confidence</span>
+          <span className="text-sm font-bold text-slate-700">91%</span>
+        </div>
+        <div className="flex flex-col p-3 rounded-lg bg-slate-50 border border-slate-100">
+          <span className="text-[10px] uppercase font-bold text-slate-500 mb-1">Expected Delay</span>
+          <span className={`text-sm font-bold ${isResolved ? 'text-emerald-600' : 'text-amber-600'}`}>
+            {isResolved ? '+2h' : '+9h'}
+          </span>
+        </div>
+        <div className="flex flex-col p-3 rounded-lg bg-slate-50 border border-slate-100">
+          <span className="text-[10px] uppercase font-bold text-slate-500 mb-1">Time to Critical Impact</span>
+          <span className="text-sm font-bold text-slate-700 flex items-center gap-1">
+            <Clock className="h-3.5 w-3.5 text-slate-400" /> 6h
+          </span>
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <span className="text-[11px] font-bold text-slate-500 uppercase block mb-1">Recommended Action</span>
+        <span className={`inline-flex font-bold tracking-widest uppercase ${isResolved ? 'text-emerald-600' : 'text-blue-600'}`}>
+          {isResolved ? 'REROUTED' : 'REROUTE'}
+        </span>
+      </div>
+
+      {/* 4 Info Cards (WHAT, WHY, IMPACT, ACTION) */}
+      <h4 className="text-[11px] font-bold tracking-wider text-slate-500 mb-3 border-t border-slate-100 pt-4">FOR FACTORY OWNER:</h4>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+          <span className="text-[10px] font-bold text-blue-600 uppercase block mb-1">WHAT</span>
+          <span className="text-xs text-slate-700 font-medium">Production disruption detected</span>
+        </div>
+        <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+          <span className="text-[10px] font-bold text-amber-600 uppercase block mb-1">WHY</span>
+          <span className="text-xs text-slate-700 font-medium">Internal operational disruption</span>
+        </div>
+        <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+          <span className="text-[10px] font-bold text-red-600 uppercase block mb-1">IMPACT</span>
+          <span className="text-xs text-slate-700 font-medium">Production capacity reduced by 28%</span>
+        </div>
+        <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+          <span className="text-[10px] font-bold text-emerald-600 uppercase block mb-1">ACTION</span>
+          <span className="text-xs text-slate-700 font-medium">Reroute affected order</span>
+        </div>
+      </div>
     </div>
   );
 }

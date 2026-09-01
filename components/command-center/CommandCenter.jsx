@@ -5,6 +5,7 @@ import { MetricCards } from "./MetricCards";
 import { NetworkHealth } from "./NetworkHealth";
 import { ActiveDisruption } from "./ActiveDisruption";
 import { AIResponsePipeline } from "./AIResponsePipeline";
+import { AIRecommendationCard } from "./AIRecommendationCard";
 import { SimulationControls } from "./SimulationControls";
 import { INITIAL_METRICS, DISRUPTED_METRICS, RESOLVED_METRICS } from "@/lib/commandCenterData";
 
@@ -110,6 +111,7 @@ export function CommandCenter() {
                 </div>
              )}
              <ActiveDisruption simulationState={simulationState} />
+             <AIRecommendationCard simulationState={simulationState} />
           </div>
         </div>
       </div>

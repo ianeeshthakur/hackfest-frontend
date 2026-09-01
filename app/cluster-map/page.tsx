@@ -11,6 +11,7 @@ import { FactoryDetails } from "@/components/cluster-map/FactoryDetails";
 import { AlternativesPanel } from "@/components/cluster-map/AlternativesPanel";
 import { NetworkCopilot } from "@/components/cluster-map/NetworkCopilot";
 import { factories, clusters, INDIA_VIEW } from "@/lib/clusterData";
+import { updateContext } from "@/lib/voiceCommands";
 import type { FilterState } from "@/components/cluster-map/types";
 
 // Dynamically import the map (Leaflet requires browser APIs, SSR disabled)
@@ -68,6 +69,7 @@ export default function ClusterMapPage() {
     const cluster = (clusters as any[]).find((c) => c.id === clusterId);
     if (!cluster) return;
     setSelectedClusterId(clusterId);
+    updateContext("lastClusterId", clusterId);
     setMapView({ longitude: cluster.lng, latitude: cluster.lat, zoom: cluster.zoom });
   }, []);
 
@@ -76,6 +78,8 @@ export default function ClusterMapPage() {
     setMapView(INDIA);
     setSelectedFactoryId(null);
     setClusterPopupInfo(null);
+    updateContext("lastClusterId", null);
+    updateContext("lastFactoryId", null);
   }, []);
 
   const handleVoiceIntent = useCallback((result: { intent: string; payload: any }) => {
@@ -110,6 +114,8 @@ export default function ClusterMapPage() {
     } else if (intent === "RESET_MAP") {
        handleReset();
        setActiveModal(null);
+    } else if (intent === "NONE") {
+       // Just speak, no map action needed
     }
   }, [handleReset]);
 
@@ -144,9 +150,15 @@ export default function ClusterMapPage() {
               onViewFactory={(id) => { setActiveFactoryId(id); setActiveModal('details'); }}
               onFindAlternatives={(id) => { setActiveFactoryId(id); setActiveModal('alternatives'); }}
               selectedFactoryId={selectedFactoryId}
-              onSelectFactory={setSelectedFactoryId}
+              onSelectFactory={(id) => {
+                setSelectedFactoryId(id);
+                if (id) updateContext("lastFactoryId", id);
+              }}
               clusterPopupInfo={clusterPopupInfo}
-              onSetClusterPopupInfo={setClusterPopupInfo}
+              onSetClusterPopupInfo={(info) => {
+                setClusterPopupInfo(info);
+                if (info) updateContext("lastClusterId", info.cluster.id);
+              }}
             />
 
             {/* Bottom-right legend */}

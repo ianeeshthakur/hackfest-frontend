@@ -232,9 +232,9 @@ export default function BuyerDashboard() {
                             ))}
                           </div>
                           <Link
-                            href="/recovery"
-                            className="mt-3 flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors"
-                          >
+                              href="/buyer-recovery"
+                              className="mt-3 flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors"
+                            >
                             View full scenario comparison
                             <ArrowRight className="h-3.5 w-3.5" />
                           </Link>
@@ -382,7 +382,7 @@ export default function BuyerDashboard() {
                               </div>
                             ))}
                             <Link
-                              href="/recovery"
+                              href="/buyer-recovery"
                               className="block text-center py-2.5 text-xs font-bold text-blue-600 border border-blue-200 rounded-xl hover:bg-blue-50 transition-colors"
                             >
                               View all recovery options →

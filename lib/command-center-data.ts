@@ -385,4 +385,11 @@ export const NAV_ITEMS: NavItem[] = [
     iconName: "ShoppingBag",
     variant: "ghost",
   },
+  {
+    id: "nav-false-div",
+    label: "False Diversification",
+    href: "/false-diversification",
+    iconName: "GitMerge",
+    variant: "ghost",
+  },
 ];

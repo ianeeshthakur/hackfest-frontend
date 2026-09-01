@@ -378,4 +378,11 @@ export const NAV_ITEMS: NavItem[] = [
     iconName: "RefreshCcw",
     variant: "ghost",
   },
+  {
+    id: "nav-buyer",
+    label: "Buyer View",
+    href: "/buyer",
+    iconName: "ShoppingBag",
+    variant: "ghost",
+  },
 ];

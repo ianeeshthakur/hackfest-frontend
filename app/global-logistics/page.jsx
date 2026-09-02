@@ -1,137 +1,52 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { LogisticsHeader } from "@/components/global-logistics/LogisticsHeader";
-import { MetricCards } from "@/components/global-logistics/MetricCards";
-import { RouteBoard } from "@/components/global-logistics/RouteBoard";
-import { NetworkWatch } from "@/components/global-logistics/NetworkWatch";
-import { PortStatus } from "@/components/global-logistics/PortStatus";
-import { METRICS } from "@/lib/globalLogisticsData";
+import React from "react";
+import { Sidebar } from "@/components/command-center/Sidebar";
+import { GlobalDisruptionCenter } from "@/components/global-disruption/GlobalDisruptionCenter";
 import { RoleGuard } from "@/components/ui/RoleGuard";
+import { Bell } from "lucide-react";
 
 export default function GlobalLogisticsPage() {
-  const [simState, setSimState] = useState("IDLE");
-  const [progressPercent, setProgressPercent] = useState(0);
-  const [currentNodeId, setCurrentNodeId] = useState("tiruppur");
-  const [metrics, setMetrics] = useState({
-    inTransit: METRICS.initialInTransit,
-    portExposure: 0,
-    routeHealth: METRICS.initialRouteHealth
-  });
-
-  const timerRef = useRef(null);
-
-  const startSimulation = () => {
-    if (simState !== "IDLE") return;
-    setSimState("MOVING_TO_NHAVA");
-    setProgressPercent(25);
-  };
-
-  useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-
-    switch (simState) {
-      case "MOVING_TO_NHAVA":
-        // Ship takes 1.5s to reach 25%
-        timerRef.current = setTimeout(() => {
-          setSimState("DISRUPTION_DETECTED");
-        }, 1500);
-        break;
-        
-      case "DISRUPTION_DETECTED":
-        setCurrentNodeId("nhava_sheva");
-        setMetrics(m => ({ ...m, portExposure: 4, routeHealth: 55.8 }));
-        timerRef.current = setTimeout(() => {
-          setSimState("ANALYZING");
-        }, 2000);
-        break;
-        
-      case "ANALYZING":
-        timerRef.current = setTimeout(() => {
-          setSimState("ALTERNATIVE_FOUND");
-        }, 2500);
-        break;
-        
-      case "ALTERNATIVE_FOUND":
-        timerRef.current = setTimeout(() => {
-          setSimState("REROUTING");
-        }, 2000);
-        break;
-        
-      case "REROUTING":
-        setMetrics(m => ({ ...m, routeHealth: 71.6, portExposure: 0 }));
-        timerRef.current = setTimeout(() => {
-          setSimState("ARRIVED_MUNDRA"); // Rerouted to same 25% spot, trigger completion tick
-          setCurrentNodeId("mundra");
-        }, 1000);
-        break;
-        
-      case "MOVING_TO_ARABIAN_SEA":
-        timerRef.current = setTimeout(() => {
-          setSimState("ARRIVED_ARABIAN_SEA");
-          setCurrentNodeId("arabian_sea");
-        }, 1500);
-        break;
-        
-      case "MOVING_TO_SUEZ":
-        timerRef.current = setTimeout(() => {
-          setSimState("ARRIVED_SUEZ");
-          setCurrentNodeId("suez_canal");
-        }, 1500);
-        break;
-        
-      case "MOVING_TO_HAMBURG":
-        timerRef.current = setTimeout(() => {
-          setSimState("DELIVERED");
-          setCurrentNodeId("hamburg");
-        }, 1500);
-        break;
-    }
-    
-    return () => clearTimeout(timerRef.current);
-  }, [simState]);
-
-  const handleCheckpointComplete = (nodeId) => {
-    // When the tick animation finishes, we move to the next state
-    if (nodeId === "mundra") {
-      setSimState("MOVING_TO_ARABIAN_SEA");
-      setProgressPercent(50);
-    } else if (nodeId === "arabian_sea") {
-      setSimState("MOVING_TO_SUEZ");
-      setProgressPercent(75);
-    } else if (nodeId === "suez_canal") {
-      setSimState("MOVING_TO_HAMBURG");
-      setProgressPercent(100);
-    }
-  };
-
   return (
     <RoleGuard allowedRole="owner">
-    <div className="flex flex-col h-full bg-[#f8fafc]">
-      <LogisticsHeader onSimulateDisruption={startSimulation} simState={simState} />
-      
-      <div className="flex-1 overflow-y-auto">
-        <MetricCards metrics={metrics} />
-        
-        <div className="px-8 pb-8 flex gap-6">
-          {/* Main Route Board */}
-          <div className="flex-grow w-2/3">
-            <RouteBoard 
-              simState={simState} 
-              progressPercent={progressPercent} 
-              onCheckpointComplete={handleCheckpointComplete}
-              currentNodeId={currentNodeId}
-            />
-          </div>
-          
-          {/* Right Sidebar */}
-          <div className="w-1/3 flex flex-col min-w-[320px]">
-            <NetworkWatch simState={simState} />
-            <PortStatus simState={simState} />
+      <div className="flex h-screen overflow-hidden bg-slate-50 font-body">
+        <Sidebar />
+
+        <div className="flex flex-1 flex-col overflow-hidden">
+          {/* Minimal Header */}
+          <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6 shrink-0">
+            <div className="flex-1"></div>
+
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <span className="text-[12px] font-semibold text-slate-500">
+                  Global Operations
+                </span>
+                <div className="h-4 w-px bg-slate-200"></div>
+                <span className="text-[12px] font-bold text-slate-700">Factory Owner View</span>
+              </div>
+              <button className="relative flex h-8 w-8 items-center justify-center rounded-full bg-slate-50 text-slate-500 hover:bg-slate-100 transition-colors">
+                <Bell className="h-4 w-4" />
+                <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-red-500 ring-2 ring-white"></span>
+              </button>
+              <div className="flex items-center gap-3 border-l border-slate-200 pl-6">
+                <div className="text-right">
+                  <div className="text-[13px] font-bold text-slate-900 leading-tight">Suresh</div>
+                  <div className="text-[11px] text-slate-500">Suresh Textiles Pvt. Ltd.</div>
+                </div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-600 text-[13px] font-bold text-white shadow-sm">
+                  ST
+                </div>
+              </div>
+            </div>
+          </header>
+
+          {/* Main Content Area */}
+          <div className="flex-1 overflow-hidden">
+            <GlobalDisruptionCenter />
           </div>
         </div>
       </div>
-    </div>
     </RoleGuard>
   );
 }

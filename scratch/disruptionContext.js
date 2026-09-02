@@ -32,12 +32,6 @@ export const disruptionConfigs = {
       action: "Identifying available production capacity",
       resolved: "Affected orders reassigned"
     },
-    subSteps: {
-      detecting: ["Heartbeat checked", "Signal verified", "Disruption detected"],
-      evaluating: ["Orders identified", "Dependencies checked", "Capacity impact calculating", "Risk score calculated"],
-      action: ["Find available factories", "Compare capacity", "Match process", "Generate recommendation"],
-      resolved: ["Track recovery", "Verify outcome"]
-    },
     aiResponse: "Production capacity reduced due to a power availability disruption. Downstream orders are being evaluated for delay exposure.",
     powerStatus: "DISRUPTED",
     buyerView: {
@@ -85,12 +79,6 @@ export const disruptionConfigs = {
       action: "Searching for alternate production equipment",
       resolved: "Production shifted to available capacity"
     },
-    subSteps: {
-      detecting: ["Telemetry anomaly detected", "Signal verified", "Disruption detected"],
-      evaluating: ["Orders identified", "Dependencies checked", "Capacity loss calculating", "Risk score calculated"],
-      action: ["Find alternate equipment", "Compare capacity", "Match process", "Generate recommendation"],
-      resolved: ["Track recovery", "Verify outcome"]
-    },
     aiResponse: "Production has been constrained by a machine interruption. Available production capacity is being reassigned to protect priority orders.",
     machineStatus: "OFFLINE",
     buyerView: {
@@ -137,12 +125,6 @@ export const disruptionConfigs = {
       action: "Optimizing production shifts",
       resolved: "Orders rescheduled across available capacity"
     },
-    subSteps: {
-      detecting: ["Availability analyzed", "Signal verified", "Disruption detected"],
-      evaluating: ["Orders identified", "Dependencies checked", "Capacity impact calculating", "Risk score calculated"],
-      action: ["Optimize shifts", "Compare capacity", "Match process", "Generate recommendation"],
-      resolved: ["Track recovery", "Verify outcome"]
-    },
     aiResponse: "Reduced workforce availability has constrained production. Orders are being rescheduled across available capacity.",
     workerAvailability: "76%",
     buyerView: {
@@ -188,12 +170,6 @@ export const disruptionConfigs = {
       evaluating: "Checking inventory and production impact",
       action: "Identifying alternate material suppliers",
       resolved: "Alternate material source activated"
-    },
-    subSteps: {
-      detecting: ["Shipment delay detected", "Signal verified", "Disruption detected"],
-      evaluating: ["Orders identified", "Inventory checked", "Production impact calculating", "Risk score calculated"],
-      action: ["Identify alternate suppliers", "Compare availability", "Match quality", "Generate recommendation"],
-      resolved: ["Track recovery", "Verify outcome"]
     },
     aiResponse: "Material availability has fallen below the required production threshold. Supplier recovery and inventory alternatives are being evaluated.",
     materialAvailability: "68%",
@@ -242,12 +218,6 @@ export const disruptionConfigs = {
       action: "Identifying alternate routes",
       resolved: "Shipment rerouted"
     },
-    subSteps: {
-      detecting: ["Logistics delay detected", "Signal verified", "Disruption detected"],
-      evaluating: ["Orders identified", "Dependencies checked", "ETA impact calculating", "Risk score calculated"],
-      action: ["Identify alternate routes", "Compare logistics", "Match timeline", "Generate recommendation"],
-      resolved: ["Track recovery", "Verify outcome"]
-    },
     aiResponse: "A logistics delay has affected shipment timing. Alternative routing and delivery windows are being evaluated.",
     buyerView: {
       title: "DELIVERY DELAY RISK",
@@ -273,9 +243,6 @@ export function DisruptionProvider({ children }) {
   const [activeDisruption, setActiveDisruption] = useState(null);
   const [simulationState, setSimulationState] = useState("IDLE");
   const [stepStatus, setStepStatus] = useState("UPCOMING");
-  
-  const [currentSubStepIndex, setCurrentSubStepIndex] = useState(-1);
-  const [subStepStatus, setSubStepStatus] = useState("UPCOMING");
 
   const timeoutRef = useRef(null);
   const stepTimeoutRef = useRef(null);
@@ -289,55 +256,19 @@ export function DisruptionProvider({ children }) {
     return clearTimeouts;
   }, []);
 
-  const runSubStepsSeq = async (subStepsArray) => {
-    return new Promise((resolve) => {
-      if (!subStepsArray || subStepsArray.length === 0) {
-        resolve();
-        return;
-      }
-      
-      let index = 0;
-      
-      const nextSubStep = () => {
-        if (index >= subStepsArray.length) {
-          resolve();
-          return;
-        }
-        
-        setCurrentSubStepIndex(index);
-        setSubStepStatus("ACTIVE");
-        
-        timeoutRef.current = setTimeout(() => {
-          setSubStepStatus("COMPLETED");
-          
-          stepTimeoutRef.current = setTimeout(() => {
-            index++;
-            nextSubStep();
-          }, 400); 
-        }, 1200); 
-      };
-      
-      nextSubStep();
-    });
-  };
-
-  const runMainStep = async (stateKey, config) => {
-    setSimulationState(stateKey);
+  const runStep = (nextState, duration, nextStepCallback) => {
+    setSimulationState(nextState);
     setStepStatus("ACTIVE");
-    setCurrentSubStepIndex(-1);
-    setSubStepStatus("UPCOMING");
     
-    const subSteps = config.subSteps[stateKey.toLowerCase()] || [];
-    await runSubStepsSeq(subSteps);
-    
-    setStepStatus("COMPLETING");
-    return new Promise((resolve) => {
-      timeoutRef.current = setTimeout(() => {
-        resolve();
+    timeoutRef.current = setTimeout(() => {
+      setStepStatus("COMPLETING");
+      stepTimeoutRef.current = setTimeout(() => {
+        nextStepCallback();
       }, 600);
-    });
+    }, duration);
   };
 
+  // Maps UI display string to internal key
   const TYPE_MAP = {
     "Power Cut": "powerCut",
     "Machine Breakdown": "machineBreakdown",
@@ -350,28 +281,26 @@ export function DisruptionProvider({ children }) {
     const key = TYPE_MAP[typeDisplay];
     if (!key) return;
 
+    // Mutate cluster map data (Suresh Textiles Tiruppur)
     simulateDisruption("F-013", typeDisplay);
+
     setActiveDisruption(key);
     
+    // IMPORTANT: Reset pipeline immediately for the new disruption
     clearTimeouts();
     setSimulationState("IDLE");
     setStepStatus("UPCOMING");
-    setCurrentSubStepIndex(-1);
-    setSubStepStatus("UPCOMING");
     
-    const config = disruptionConfigs[key];
-    
-    setTimeout(async () => {
-      await runMainStep("DETECTING", config);
-      await runMainStep("EVALUATING", config);
-      await runMainStep("ACTION", config);
-      
-      setSimulationState("RESOLVED");
-      setStepStatus("ACTIVE");
-      setCurrentSubStepIndex(-1);
-      setSubStepStatus("UPCOMING");
-      await runSubStepsSeq(config.subSteps.resolved || []);
-      setStepStatus("COMPLETED");
+    // Slight delay to allow UI to catch the IDLE reset before starting new pipeline
+    setTimeout(() => {
+      runStep("DETECTING", 2000, () => {
+        runStep("EVALUATING", 3000, () => {
+          runStep("ACTION", 4000, () => {
+            setSimulationState("RESOLVED");
+            setStepStatus("COMPLETED");
+          });
+        });
+      });
     }, 50);
   };
 
@@ -380,8 +309,6 @@ export function DisruptionProvider({ children }) {
     setActiveDisruption(null);
     setSimulationState("IDLE");
     setStepStatus("UPCOMING");
-    setCurrentSubStepIndex(-1);
-    setSubStepStatus("UPCOMING");
     clearTimeouts();
   };
 
@@ -395,8 +322,6 @@ export function DisruptionProvider({ children }) {
       currentConfig,
       triggerDisruption,
       resetDisruption,
-      currentSubStepIndex,
-      subStepStatus
     }}>
       {children}
     </DisruptionContext.Provider>

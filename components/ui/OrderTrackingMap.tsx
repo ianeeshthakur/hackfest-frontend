@@ -10,17 +10,19 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useDisruption } from "@/lib/disruptionContext";
 
 // Port and factory coordinates
 const TIRUPPUR: [number, number] = [11.1085, 77.3411];
 const NHAVA_SHEVA: [number, number] = [18.9482, 72.9463];
+const MUNDRA: [number, number] = [22.7380, 69.7042];
 const SUEZ: [number, number] = [29.9245, 32.5519];
 const HAMBURG: [number, number] = [53.5488, 9.9872];
 
-const FULL_ROUTE: [number, number][] = [
+const ORIGINAL_ROUTE: [number, number][] = [
   TIRUPPUR,
   [14.5, 75.0], // Waypoint to port
-  NHAVA_SHEVA,
+  NHAVA_SHEVA, // index 2 (disruption point)
   [14.0, 68.0], // Arabian Sea
   [12.0, 43.0], // Gulf of Aden
   SUEZ,
@@ -28,6 +30,23 @@ const FULL_ROUTE: [number, number][] = [
   [45.0, -8.0], // Bay of Biscay
   HAMBURG
 ];
+
+const RECOVERY_ROUTE: [number, number][] = [
+  TIRUPPUR,
+  [16.0, 73.0], // Waypoint to alternate port
+  MUNDRA, // index 2
+  [18.0, 64.0], // Arabian Sea
+  [14.0, 52.0], // Entering Gulf
+  [12.0, 43.0], // Gulf of Aden
+  SUEZ,
+  [35.0, 15.0], // Mediterranean
+  [45.0, -8.0], // Bay of Biscay
+  HAMBURG
+];
+
+const DISRUPTION_INDEX = 2;
+const TOTAL_SEGMENTS = ORIGINAL_ROUTE.length - 1;
+const DISRUPTION_PROGRESS = DISRUPTION_INDEX / TOTAL_SEGMENTS; // 0.25
 
 function MapController({ route }: { route: [number, number][] }) {
   const map = useMap();
@@ -41,12 +60,36 @@ function MapController({ route }: { route: [number, number][] }) {
 }
 
 export default function OrderTrackingMap() {
-  const [currentPos, setCurrentPos] = useState<[number, number]>(FULL_ROUTE[0]);
+  const [currentPos, setCurrentPos] = useState<[number, number]>(ORIGINAL_ROUTE[0]);
   const [progress, setProgress] = useState(0);
+  const [isFrozen, setIsFrozen] = useState(false);
+  
   const reqRef = useRef<number>();
+  const progressRef = useRef(0);
+  const lastTimeRef = useRef<number>(0);
+  
+  // Use Global Disruption Context
+  const { activeDisruption, simulationState } = useDisruption();
 
-  // Ensure icons are only created on the client side
-  const [icons, setIcons] = useState<{ shipIcon: L.Icon, trackingIcon: L.DivIcon } | null>(null);
+  // State calculations
+  const isDisrupted = !!activeDisruption && simulationState !== "RESOLVED" && simulationState !== "IDLE";
+  const isRecovered = simulationState === "RESOLVED";
+  
+  const activeRoute = isRecovered ? RECOVERY_ROUTE : ORIGINAL_ROUTE;
+
+  const isDisruptedRef = useRef(isDisrupted);
+  const activeRouteRef = useRef(activeRoute);
+
+  useEffect(() => {
+    isDisruptedRef.current = isDisrupted;
+    activeRouteRef.current = activeRoute;
+  }, [isDisrupted, activeRoute]);
+
+  const [icons, setIcons] = useState<{ 
+    shipIcon: L.Icon, 
+    trackingIcon: L.DivIcon,
+    disruptionIcon: L.DivIcon 
+  } | null>(null);
 
   useEffect(() => {
     const iconPath = "https://unpkg.com/leaflet@1.9.4/dist/images/";
@@ -56,9 +99,6 @@ export default function OrderTrackingMap() {
       shadowUrl: iconPath + "marker-shadow.png",
       iconSize: [25, 41],
       iconAnchor: [12, 41],
-      popupAnchor: [1, -34],
-      tooltipAnchor: [16, -28],
-      shadowSize: [41, 41]
     });
 
     const tracking = new L.DivIcon({
@@ -73,25 +113,54 @@ export default function OrderTrackingMap() {
       iconAnchor: [8, 8]
     });
 
-    setIcons({ shipIcon: ship, trackingIcon: tracking });
+    const disrupted = new L.DivIcon({
+      className: "bg-transparent",
+      html: `
+        <div class="relative flex h-5 w-5 items-center justify-center">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-600 border-2 border-white shadow"></span>
+        </div>
+      `,
+      iconSize: [20, 20],
+      iconAnchor: [10, 10]
+    });
 
-    // Animate the marker
-    const duration = 10000; 
-    let startTime = performance.now();
-    const segments = FULL_ROUTE.length - 1;
+    setIcons({ shipIcon: ship, trackingIcon: tracking, disruptionIcon: disrupted });
+
+    // Animate the marker (Total duration for full route = 20 seconds)
+    const durationMs = 20000; 
+    const speedPerMs = 1 / durationMs;
+    lastTimeRef.current = performance.now();
 
     const animate = (time: number) => {
-      let elapsed = time - startTime;
-      if (elapsed > duration) elapsed = duration; 
+      const deltaTime = time - lastTimeRef.current;
+      lastTimeRef.current = time;
       
-      const totalProgress = elapsed / duration; 
-      setProgress(totalProgress);
+      let p = progressRef.current;
       
-      const segmentIndex = Math.min(Math.floor(totalProgress * segments), segments - 1);
-      const segmentProgress = (totalProgress * segments) - segmentIndex;
+      if (isDisruptedRef.current && p >= DISRUPTION_PROGRESS) {
+        // Halt at disruption point exactly
+        p = DISRUPTION_PROGRESS;
+        setIsFrozen(true);
+      } else {
+        setIsFrozen(false);
+        p += speedPerMs * deltaTime;
+        if (p > 1) {
+          p = 1; // STOP at destination
+        }
+      }
       
-      const startNode = FULL_ROUTE[segmentIndex];
-      const endNode = FULL_ROUTE[segmentIndex + 1];
+      progressRef.current = p;
+      setProgress(p);
+      
+      // Calculate position
+      const route = activeRouteRef.current;
+      const segments = route.length - 1;
+      const segmentIndex = Math.min(Math.floor(p * segments), segments - 1);
+      const segmentProgress = (p * segments) - segmentIndex;
+      
+      const startNode = route[segmentIndex];
+      const endNode = route[segmentIndex + 1];
       
       if (startNode && endNode) {
         const lat = startNode[0] + (endNode[0] - startNode[0]) * segmentProgress;
@@ -99,13 +168,8 @@ export default function OrderTrackingMap() {
         setCurrentPos([lat, lng]);
       }
       
-      if (elapsed < duration) {
+      if (p < 1) {
         reqRef.current = requestAnimationFrame(animate);
-      } else {
-        setTimeout(() => {
-          startTime = performance.now();
-          reqRef.current = requestAnimationFrame(animate);
-        }, 2000);
       }
     };
     
@@ -116,6 +180,12 @@ export default function OrderTrackingMap() {
   }, []);
 
   if (!icons) return <div className="h-[250px] w-full bg-slate-100 animate-pulse rounded-xl" />;
+
+  const trackingOverlayClass = isFrozen 
+    ? "bg-red-50 text-red-700 border-red-200" 
+    : isRecovered 
+    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+    : "bg-white/90 text-slate-700 border-slate-200";
 
   return (
     <div className="w-full h-[250px] rounded-xl overflow-hidden border border-slate-200 shadow-inner relative z-0">
@@ -129,18 +199,18 @@ export default function OrderTrackingMap() {
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
         />
-        <MapController route={FULL_ROUTE} />
+        <MapController route={activeRoute} />
         
         {/* Draw the full route path */}
         <Polyline 
-          positions={FULL_ROUTE} 
+          positions={activeRoute} 
           pathOptions={{ color: '#cbd5e1', weight: 3, dashArray: '5, 5' }} 
         />
         
         {/* Draw the traveled path */}
         <Polyline 
-          positions={FULL_ROUTE.slice(0, Math.max(2, Math.floor(progress * (FULL_ROUTE.length - 1)) + 1))} 
-          pathOptions={{ color: '#3b82f6', weight: 4 }} 
+          positions={activeRoute.slice(0, Math.max(2, Math.floor(progress * (activeRoute.length - 1)) + 1))} 
+          pathOptions={{ color: isFrozen ? '#ef4444' : '#3b82f6', weight: 4 }} 
         />
 
         {/* Start and End markers */}
@@ -148,17 +218,19 @@ export default function OrderTrackingMap() {
         <Marker position={HAMBURG} icon={icons.shipIcon} />
         
         {/* Animated current position marker */}
-        <Marker position={currentPos} icon={icons.trackingIcon} />
+        <Marker position={currentPos} icon={isFrozen ? icons.disruptionIcon : icons.trackingIcon} />
       </MapContainer>
       
       {/* Overlay badges */}
-      <div className="absolute top-3 right-3 z-[400] bg-white/90 backdrop-blur-sm border border-slate-200 px-3 py-1.5 rounded-full shadow-sm pointer-events-none">
+      <div className={`absolute top-3 right-3 z-[400] backdrop-blur-sm border px-3 py-1.5 rounded-full shadow-sm pointer-events-none ${trackingOverlayClass}`}>
         <div className="flex items-center gap-2">
            <span className="relative flex h-2 w-2">
-             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+             <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isFrozen ? "bg-red-400" : isRecovered ? "bg-emerald-400" : "bg-blue-400"}`}></span>
+             <span className={`relative inline-flex rounded-full h-2 w-2 ${isFrozen ? "bg-red-500" : isRecovered ? "bg-emerald-500" : "bg-blue-500"}`}></span>
            </span>
-           <span className="text-[10px] font-bold text-slate-700 tracking-wider uppercase">Live Tracking</span>
+           <span className="text-[10px] font-bold tracking-wider uppercase">
+             {isFrozen ? "Shipment On Hold" : isRecovered ? "Rerouting..." : progress === 1 ? "Delivered" : "Live Tracking"}
+           </span>
         </div>
       </div>
     </div>

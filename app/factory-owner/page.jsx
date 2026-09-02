@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { Sidebar } from "@/components/command-center/Sidebar";
-import { factories, simulateDisruption } from "@/lib/clusterData";
+import { factories } from "@/lib/clusterData";
+import { useDisruption } from "@/lib/disruptionContext";
 import { Activity, Zap, Users, Factory, Package, AlertTriangle, Play, ShieldAlert } from "lucide-react";
 import { ExplainableRiskScore } from "@/components/ui/ExplainableRiskScore";
 import { RoleGuard } from "@/components/ui/RoleGuard";
@@ -12,7 +13,7 @@ export default function FactoryOwnerDashboard() {
   const TARGET_FACTORY_ID = "F-013";
   
   const [factoryData, setFactoryData] = useState(null);
-  const [activeDisruption, setActiveDisruption] = useState(null);
+  const { activeDisruption, triggerDisruption, resetDisruption } = useDisruption();
 
   // Orders State (Mocked)
   const [orders, setOrders] = useState([
@@ -36,17 +37,17 @@ export default function FactoryOwnerDashboard() {
     const f = factories.find(f => f.id === TARGET_FACTORY_ID);
     if (f) {
       setFactoryData({ ...f });
-      if (f.status !== "OPERATIONAL") {
-        setActiveDisruption(f.disruption);
-      }
+      // Removed setActiveDisruption local call
     }
   }, []);
 
   const handleSimulateDisruption = (type) => {
-    // 1. Mutate Global Data
-    const updatedFactory = simulateDisruption(TARGET_FACTORY_ID, type);
-    setFactoryData({ ...updatedFactory });
-    setActiveDisruption(type);
+    // 1. Mutate Global Data via Context
+    triggerDisruption(type);
+    
+    // Simulate local update
+    const f = factories.find(fac => fac.id === TARGET_FACTORY_ID);
+    if(f) setFactoryData({ ...f });
 
     // 2. Update Local Dashboard Metrics
     if (type === "Power Cut") {
@@ -86,9 +87,11 @@ export default function FactoryOwnerDashboard() {
   };
 
   const handleReset = () => {
-    const updatedFactory = simulateDisruption(TARGET_FACTORY_ID, "RESET");
-    setFactoryData({ ...updatedFactory });
-    setActiveDisruption(null);
+    resetDisruption();
+    
+    // Simulate local update
+    const f = factories.find(fac => fac.id === TARGET_FACTORY_ID);
+    if(f) setFactoryData({ ...f });
     setMetrics({
       machineUptime: 97.2,
       workerAvailability: 94,
@@ -194,10 +197,10 @@ export default function FactoryOwnerDashboard() {
               </h2>
               
               <div className="grid grid-cols-1 gap-3">
-                <DisruptionBtn label="Power Cut" onClick={() => handleSimulateDisruption("Power Cut")} active={activeDisruption === "Power Cut"} />
-                <DisruptionBtn label="Machine Breakdown" onClick={() => handleSimulateDisruption("Machine Breakdown")} active={activeDisruption === "Machine Breakdown"} />
-                <DisruptionBtn label="Worker Shortage" onClick={() => handleSimulateDisruption("Worker Shortage")} active={activeDisruption === "Worker Shortage"} />
-                <DisruptionBtn label="Raw Material Delay" onClick={() => handleSimulateDisruption("Raw Material Delay")} active={activeDisruption === "Raw Material Delay"} />
+                <DisruptionBtn label="Power Cut" onClick={() => handleSimulateDisruption("Power Cut")} active={activeDisruption === "powerCut"} />
+                <DisruptionBtn label="Machine Breakdown" onClick={() => handleSimulateDisruption("Machine Breakdown")} active={activeDisruption === "machineBreakdown"} />
+                <DisruptionBtn label="Worker Shortage" onClick={() => handleSimulateDisruption("Worker Shortage")} active={activeDisruption === "workerShortage"} />
+                <DisruptionBtn label="Raw Material Delay" onClick={() => handleSimulateDisruption("Raw Material Delay")} active={activeDisruption === "rawMaterialDelay"} />
               </div>
 
               {activeDisruption && (

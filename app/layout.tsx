@@ -3,6 +3,7 @@ import { Space_Grotesk, Inter, IBM_Plex_Mono } from "next/font/google";
 import { AuditProvider } from "@/lib/auditContext";
 import { RoleProvider } from "@/lib/roleContext";
 import { RoleSwitcher } from "@/components/ui/RoleSwitcher";
+import { DisruptionProvider } from "@/lib/disruptionContext";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -45,8 +46,10 @@ export default function RootLayout({
       <body className="min-h-screen bg-bg text-slate-100 font-body antialiased selection:bg-teal selection:text-bg">
         <RoleProvider>
           <AuditProvider>
-            {children}
-            <RoleSwitcher />
+            <DisruptionProvider>
+              {children}
+              <RoleSwitcher />
+            </DisruptionProvider>
           </AuditProvider>
         </RoleProvider>
       </body>

@@ -25,7 +25,7 @@ export function ExplainableRiskScore({ score, type = "Risk", className = "" }) {
   const capacity = Math.round(score * 0.15);
   const supplier = Math.round(score * 0.15);
   const recovery = Math.round(score * 0.15);
-  
+
   // To avoid rounding errors making the sum != score, we adjust the largest weight
   const sum = disruption + deadline + capacity + supplier + recovery;
   const diff = score - sum;
@@ -35,9 +35,9 @@ export function ExplainableRiskScore({ score, type = "Risk", className = "" }) {
 
   return (
     <div className={`relative inline-flex items-center gap-2 ${className}`} ref={popoverRef}>
-      
+
       {/* Base Score Display */}
-      <div 
+      <div
         className="flex items-center gap-1.5 cursor-pointer hover:bg-slate-800/50 p-1.5 -ml-1.5 rounded-md transition-colors group"
         onClick={() => setIsOpen(!isOpen)}
         onMouseEnter={() => setIsOpen(true)}
@@ -51,14 +51,14 @@ export function ExplainableRiskScore({ score, type = "Risk", className = "" }) {
 
       {/* Popover */}
       {isOpen && (
-        <div 
+        <div
           className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-80 bg-slate-900 border border-slate-700 shadow-2xl rounded-xl p-5 z-50 animate-popover-up"
           onMouseEnter={() => setIsOpen(true)}
           onMouseLeave={() => setIsOpen(false)}
         >
           {/* Arrow */}
           <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-[1px] border-solid border-t-slate-900 border-t-8 border-x-transparent border-x-8 border-b-0"></div>
-          
+
           <div className="flex items-center gap-2 mb-4">
             <span className="px-2 py-0.5 bg-blue-900/40 border border-blue-800 text-blue-400 text-[9px] uppercase tracking-widest font-bold rounded-sm">
               Simulated Demo Scoring Model
@@ -105,7 +105,8 @@ export function ExplainableRiskScore({ score, type = "Risk", className = "" }) {
           </div>
 
           {/* Injecting specific animation styles here so it's fully encapsulated */}
-          <style dangerouslySetInnerHTML={{__html: `
+          <style dangerouslySetInnerHTML={{
+            __html: `
             @keyframes popover-up {
               from { opacity: 0; transform: translate(-50%, 10px) scale(0.95); }
               to { opacity: 1; transform: translate(-50%, 0) scale(1); }
@@ -125,7 +126,7 @@ export function ExplainableRiskScore({ score, type = "Risk", className = "" }) {
 
 function FactorBar({ label, value, max, color, delay }) {
   const percentage = Math.max(0, Math.min(100, (value / max) * 100));
-  
+
   return (
     <div>
       <div className="flex justify-between text-[11px] mb-1">
@@ -133,12 +134,12 @@ function FactorBar({ label, value, max, color, delay }) {
         <span className="text-slate-300 font-mono">{value} <span className="text-slate-600">/ {max}</span></span>
       </div>
       <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-        <div 
-          className={`h-full ${color} rounded-full`} 
-          style={{ 
-            width: `${percentage}%`, 
-            animation: `bar-fill 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${delay} forwards` 
-          }} 
+        <div
+          className={`h-full ${color} rounded-full`}
+          style={{
+            width: `${percentage}%`,
+            animation: `bar-fill 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${delay} forwards`
+          }}
         />
       </div>
     </div>

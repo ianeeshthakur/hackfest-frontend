@@ -1,68 +1,25 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 import { MetricCards } from "./MetricCards";
 import { NetworkHealth } from "./NetworkHealth";
 import { ActiveDisruption } from "./ActiveDisruption";
 import { AIResponsePipeline } from "./AIResponsePipeline";
 import { AIRecommendationCard } from "./AIRecommendationCard";
 import { SimulationControls } from "./SimulationControls";
-import { INITIAL_METRICS, DISRUPTED_METRICS, RESOLVED_METRICS } from "@/lib/commandCenterData";
+import { useDisruption } from "@/lib/disruptionContext";
 
 export function CommandCenter() {
-  const [simulationState, setSimulationState] = useState("IDLE"); 
-  const [stepStatus, setStepStatus] = useState("UPCOMING");
-  const [metrics, setMetrics] = useState(INITIAL_METRICS);
-  
-  const timeoutRef = useRef(null);
+  const { 
+    simulationState, 
+    stepStatus, 
+    currentConfig, 
+    triggerDisruption, 
+    resetDisruption 
+  } = useDisruption();
 
-  const clearTimeouts = () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-  };
-
-  useEffect(() => {
-    return clearTimeouts;
-  }, []);
-
-  const runStep = (nextState, duration, nextStepCallback) => {
-    setSimulationState(nextState);
-    setStepStatus("ACTIVE");
-    
-    timeoutRef.current = setTimeout(() => {
-      setStepStatus("COMPLETING");
-      // Wait for checkmark drawing
-      timeoutRef.current = setTimeout(() => {
-        nextStepCallback();
-      }, 600);
-    }, duration);
-  };
-
-  const startSimulation = () => {
-    clearTimeouts();
-    setMetrics(DISRUPTED_METRICS);
-    
-    // Detecting: 2s -> Evaluating: 3s -> Rerouting: 4s -> Resolved
-    runStep("DETECTING", 2000, () => {
-      runStep("EVALUATING", 3000, () => {
-        runStep("REROUTING", 4000, () => {
-          setSimulationState("RESOLVED");
-          setStepStatus("COMPLETED");
-          
-          // Wait briefly before showing final metrics to align with 'resolved' state
-          timeoutRef.current = setTimeout(() => {
-             setMetrics(RESOLVED_METRICS);
-          }, 500);
-        });
-      });
-    });
-  };
-
-  const resetSimulation = () => {
-    clearTimeouts();
-    setSimulationState("IDLE");
-    setStepStatus("UPCOMING");
-    setMetrics(INITIAL_METRICS);
-  };
+  const startSimulation = () => triggerDisruption("Power Cut");
+  const resetSimulation = () => resetDisruption();
 
   return (
     <div className="flex-1 overflow-y-auto px-6 py-8">
@@ -88,10 +45,10 @@ export function CommandCenter() {
         {/* Metrics Row */}
         <div className="grid grid-cols-12 gap-6">
           <div className="col-span-12 lg:col-span-8">
-            <MetricCards metrics={metrics} />
+            <MetricCards />
           </div>
           <div className="col-span-12 lg:col-span-4">
-            <NetworkHealth metrics={metrics} />
+            <NetworkHealth />
           </div>
         </div>
 

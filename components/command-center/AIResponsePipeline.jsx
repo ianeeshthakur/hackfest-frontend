@@ -1,7 +1,10 @@
 import React from "react";
 import { AIResponseStep } from "./AIResponseStep";
+import { useDisruption } from "@/lib/disruptionContext";
 
-export function AIResponsePipeline({ simulationState, stepStatus }) {
+export function AIResponsePipeline() {
+  const { currentConfig, simulationState, stepStatus } = useDisruption();
+
   const getStepState = (stepName) => {
     // If simulation is idle, everything is upcoming except if simulation is fully done
     if (simulationState === "IDLE") return "UPCOMING";
@@ -17,33 +20,35 @@ export function AIResponsePipeline({ simulationState, stepStatus }) {
   };
 
   const activeMessage = () => {
-    if (simulationState === "IDLE") return "Ready to assist with disruptions.";
+    if (simulationState === "IDLE" || !currentConfig) return "Ready to assist with disruptions.";
     
+    const t = currentConfig.timeline;
+
     if (simulationState === "DETECTING") {
       return (
         <span>
-          <strong className="text-blue-700">AI is working:</strong> Monitoring unit heartbeat signals and identifying the disruption source.
+          <strong className="text-blue-700">AI is working:</strong> {t.detecting}
         </span>
       );
     }
     if (simulationState === "EVALUATING") {
       return (
         <span>
-          <strong className="text-blue-700">AI is working:</strong> Assessing affected orders, capacity and production dependencies.
+          <strong className="text-blue-700">AI is working:</strong> {t.evaluating}
         </span>
       );
     }
     if (simulationState === "REROUTING") {
       return (
         <span>
-          <strong className="text-blue-700">AI is working:</strong> Orders linked to the Garmenting Unit are being evaluated for rerouting to available cluster capacity.
+          <strong className="text-blue-700">AI is working:</strong> {t.rerouting}
         </span>
       );
     }
     if (simulationState === "RESOLVED") {
       return (
         <span>
-          <strong className="text-emerald-700">AI response:</strong> Affected orders have been successfully reassigned to available production capacity.
+          <strong className="text-emerald-700">AI response:</strong> {t.mitigated}
         </span>
       );
     }

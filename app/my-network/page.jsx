@@ -9,10 +9,18 @@ import { RoleGuard } from "@/components/ui/RoleGuard";
 
 import { ProcessWheel } from "./components/ProcessWheel";
 import { SupplyChainGraph } from "./components/SupplyChainGraph";
+import { useDisruption } from "@/lib/disruptionContext";
+import { useRole } from "@/lib/roleContext";
+import { Bot, RotateCcw } from "lucide-react";
 
 export default function MyNetworkPage() {
+  const { role } = useRole();
+  const isBuyer = role === "buyer";
   const TARGET_FACTORY_ID = "F-013";
   const [factoryData, setFactoryData] = useState(null);
+  
+  const { activeDisruption } = useDisruption();
+  const [networkPhase, setNetworkPhase] = useState("NORMAL"); // NORMAL, DISRUPTION, AI_SEARCH, REROUTING, RECOVERED
 
   useEffect(() => {
     const f = factories.find(f => f.id === TARGET_FACTORY_ID);
@@ -20,6 +28,34 @@ export default function MyNetworkPage() {
       setFactoryData({ ...f });
     }
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const fromRecovery = params.get('fromRecovery') === 'true';
+
+    if (fromRecovery && activeDisruption) {
+      setNetworkPhase("DISRUPTION");
+      
+      const t1 = setTimeout(() => setNetworkPhase("AI_SEARCH"), 2000);
+      const t2 = setTimeout(() => setNetworkPhase("REROUTING"), 5000);
+      const t3 = setTimeout(() => setNetworkPhase("RECOVERED"), 7500);
+
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+      };
+    } else {
+      setNetworkPhase("NORMAL");
+    }
+  }, [activeDisruption]);
+
+  const runAnimation = () => {
+    setNetworkPhase("DISRUPTION");
+    setTimeout(() => setNetworkPhase("AI_SEARCH"), 2000);
+    setTimeout(() => setNetworkPhase("REROUTING"), 5000);
+    setTimeout(() => setNetworkPhase("RECOVERED"), 7500);
+  };
 
   if (!factoryData) return null;
 
@@ -99,8 +135,41 @@ export default function MyNetworkPage() {
                 <h2 className="text-xl font-bold tracking-tight text-slate-200">My Supply Chain Network</h2>
                 <p className="text-xs text-slate-500 mt-1">Direct dependencies mapped to your facility.</p>
               </div>
+              {activeDisruption && (
+                <button 
+                  onClick={runAnimation}
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition-colors border border-slate-700"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" /> Replay Network Event
+                </button>
+              )}
             </div>
-            <SupplyChainGraph />
+
+            {/* AI Context Banner */}
+            {activeDisruption && networkPhase !== "NORMAL" && (
+              <div className="bg-[#111826] border border-blue-900/40 rounded-xl p-4 flex items-center gap-4">
+                <div className="p-3 bg-blue-900/30 text-blue-400 rounded-lg shrink-0 relative">
+                  <Bot className="w-5 h-5" />
+                  {networkPhase === "AI_SEARCH" && (
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-blue-400 animate-ping"></span>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-1">ThreadLine AI Copilot</h3>
+                  <p className="text-sm font-medium text-slate-300">
+                    {networkPhase === "DISRUPTION" && `ThreadLine detected a disruption: ${isBuyer ? activeDisruption.buyerView?.title || "SUPPLY DELAY RISK" : activeDisruption.title}. Mapping network impact...`}
+                    {networkPhase === "AI_SEARCH" && "Analyzing network alternatives and rerouting capacity..."}
+                    {networkPhase === "REROUTING" && "Optimal alternative identified. Rerouting supply flow..."}
+                    {networkPhase === "RECOVERED" && "Network recovery active. Flow has been successfully rerouted."}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <SupplyChainGraph 
+              activeDisruption={activeDisruption} 
+              networkPhase={networkPhase} 
+            />
             
             {/* Summary Footer */}
             <div className="bg-[#111826] border border-slate-800 rounded-xl p-6 shadow-2xl flex items-center justify-between mb-8 mt-4">
@@ -128,15 +197,23 @@ export default function MyNetworkPage() {
               <div className="flex items-center gap-12">
                 <div>
                   <p className="text-[10px] text-amber-500/80 uppercase tracking-widest mb-1">Orders At Risk</p>
-                  <p className="text-xl font-bold text-amber-400">2</p>
+                  <p className="text-xl font-bold text-amber-400">{activeDisruption ? activeDisruption.ordersAffected : 0}</p>
                 </div>
                 <div>
                   <p className="text-[10px] text-amber-500/80 uppercase tracking-widest mb-1">Est. Delay</p>
-                  <p className="text-xl font-bold text-amber-400">+9h</p>
+                  <p className="text-xl font-bold text-amber-400">
+                    {activeDisruption 
+                      ? (networkPhase === "RECOVERED" && activeDisruption.recovery ? `+${activeDisruption.recovery.delayHours}h` : `+${activeDisruption.delayHours}h`) 
+                      : '+0h'}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-red-500/80 uppercase tracking-widest mb-1">Est. Impact</p>
-                  <p className="text-xl font-bold text-red-400">₹1,25,000</p>
+                  <p className="text-[10px] text-red-500/80 uppercase tracking-widest mb-1">Risk Score</p>
+                  <p className="text-xl font-bold text-red-400">
+                    {activeDisruption 
+                      ? (networkPhase === "RECOVERED" && activeDisruption.recovery ? activeDisruption.recovery.riskScore : activeDisruption.riskScore) 
+                      : 12}
+                  </p>
                 </div>
               </div>
 

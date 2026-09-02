@@ -332,11 +332,11 @@ export default function RecoveryScenarios() {
               </div>
               {selected && (
                 <Link
-                  href="/cluster-map"
+                  href="/my-network?fromRecovery=true"
                   className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl transition-colors shadow-lg shadow-emerald-900/30"
                 >
                   <Map className="h-4 w-4" />
-                  Go to Cluster Map to Accept / Reject
+                  Go to My Network to Accept / Reject
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               )}
@@ -351,7 +351,7 @@ export default function RecoveryScenarios() {
                   {" "}— Risk <span className="text-white font-bold">{selectedScenario.risk}</span>, Delay <span className="text-white font-bold">{selectedScenario.delay}</span>, Cost <span className="text-white font-bold">{selectedScenario.cost}</span>
                 </span>
                 <span className="ml-auto text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                  Proceed to Cluster Map to submit approval →
+                  Proceed to My Network to submit approval →
                 </span>
               </div>
             )}
@@ -555,10 +555,10 @@ export default function RecoveryScenarios() {
                 </div>
               </div>
               <Link
-                href="/cluster-map"
+                href="/my-network?fromRecovery=true"
                 className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl transition-all shadow-xl shadow-emerald-900/30 whitespace-nowrap shrink-0"
               >
-                Accept / Reject on Cluster Map
+                Accept / Reject on My Network
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>

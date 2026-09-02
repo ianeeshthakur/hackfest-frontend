@@ -61,7 +61,7 @@ export default function ClusterMapPage() {
     return (factories as any[]).filter((f) => {
       // Buyer only sees the disrupted factory and alternate factories (SuppA-T02, etc.)
       if (isBuyer) {
-        if (!["F-X7K92", "F-M4R11", "SuppA-T02", "SuppA-S07"].includes(f.id)) return false;
+        if (!["F-003", "F-013", "F-016", "F-020"].includes(f.id)) return false;
       }
       
       const clusterMatch = filters.cluster === "all" || f.clusterId === filters.cluster;

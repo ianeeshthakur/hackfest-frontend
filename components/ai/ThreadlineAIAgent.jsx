@@ -18,6 +18,13 @@ export function ThreadlineAIAgent() {
   const disruptionContext = useDisruption(); // Contains currentConfig and simulationState
   
   const messagesEndRef = useRef(null);
+  const synthRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      synthRef.current = window.speechSynthesis;
+    }
+  }, []);
 
   const pageContext = getPageContext(pathname, role);
   const suggestedQuestions = getSuggestedQuestions(pathname, role);
@@ -29,13 +36,6 @@ export function ThreadlineAIAgent() {
 
   // Initial greeting when page changes
   useEffect(() => {
-    // Clear chat when page changes (optional, but requested behavior is not to unnecessarily clear.
-    // User requested: "Do NOT reset the entire conversation unnecessarily when navigating. Keep the agent persistent."
-    // However, we should inject a new contextual message if we switch domains significantly.
-    // To keep it simple and fulfill "Keep the agent persistent", we'll just push a system message.
-    
-    // Instead of pushing multiple greetings, let's ensure the agent greets once on load, 
-    // and just updates the Header based on `pageContext`.
     if (messages.length === 0) {
       setMessages([
         {
@@ -60,16 +60,29 @@ export function ThreadlineAIAgent() {
     setTimeout(() => {
       const response = generateAIResponse(text, pathname, role, disruptionContext);
       let aiMsg;
+      let spokenText = "";
       
       if (typeof response === "string") {
         aiMsg = { id: Date.now() + 1, sender: "ai", text: response };
+        spokenText = response;
       } else {
         // It's a structured object from the new engine
         aiMsg = { id: Date.now() + 1, sender: "ai", text: response.text, obj: response };
+        spokenText = response.text;
       }
       
       setMessages((prev) => [...prev, aiMsg]);
       setIsTyping(false);
+      
+      // Speak the response
+      if (synthRef.current && spokenText) {
+        synthRef.current.cancel();
+        // Remove markdown bold symbols for cleaner speech
+        const cleanText = spokenText.replace(/\*\*/g, "");
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.rate = 0.95;
+        synthRef.current.speak(utterance);
+      }
     }, 1000);
   };
 

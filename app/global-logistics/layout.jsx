@@ -7,12 +7,5 @@ export const metadata = {
 };
 
 export default function GlobalLogisticsLayout({ children }) {
-  return (
-    <div className="flex h-screen w-full bg-[#f8fafc] text-slate-900 overflow-hidden font-sans">
-      <LogisticsSidebar />
-      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        {children}
-      </main>
-    </div>
-  );
+  return <>{children}</>;
 }

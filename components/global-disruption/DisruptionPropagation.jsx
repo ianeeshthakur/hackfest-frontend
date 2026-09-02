@@ -4,57 +4,10 @@ import { ArrowDown } from "lucide-react";
 export function DisruptionPropagation({ activeEvent }) {
   if (!activeEvent) return null;
 
-  const getSteps = () => {
-    switch (activeEvent.type) {
-      case "workerShortage":
-        return [
-          { text: "Factory production capacity -24%", highlight: true },
-          { text: "3 orders exposed" },
-          { text: "8,500 units delayed", highlight: true },
-          { text: "Expected delay +6h" },
-          { text: "Alternate capacity identified", success: true }
-        ];
-      case "powerCut":
-        return [
-          { text: "Power failure halts Spinning Line", highlight: true },
-          { text: "18% total capacity lost" },
-          { text: "2 orders delayed", highlight: true },
-          { text: "Expected restoration +4h" },
-          { text: "Backup generators inadequate for full load" }
-        ];
-      case "machineBreakdown":
-        return [
-          { text: "Machine M-4 offline", highlight: true },
-          { text: "Production line 3 halted" },
-          { text: "31% capacity reduction", highlight: true },
-          { text: "7,800 units delayed" },
-          { text: "Maintenance dispatched, ETA 8h", success: true }
-        ];
-      case "rawMaterialDelay":
-        return [
-          { text: "Supplier T-4 misses shipment", highlight: true },
-          { text: "Inventory buffers depleted" },
-          { text: "37% capacity at risk", highlight: true },
-          { text: "Expected delay +12h" },
-          { text: "Alternative sourcing activated", success: true }
-        ];
-      case "logisticsDelay":
-        return [
-          { text: "Transit delay on NH-44", highlight: true },
-          { text: "Shipment stuck in queue" },
-          { text: "15,000 units delayed", highlight: true },
-          { text: "Expected delay +48h" },
-          { text: "Rerouting via alternate port evaluated", success: true }
-        ];
-      default:
-        return [
-          { text: "Disruption detected", highlight: true },
-          { text: "Analyzing impact..." }
-        ];
-    }
-  };
-
-  const steps = getSteps();
+  const steps = activeEvent.propagationSteps || [
+    { text: "Disruption detected", highlight: true },
+    { text: "Analyzing impact..." }
+  ];
 
   return (
     <div className="flex flex-col gap-2 mt-4 font-body">

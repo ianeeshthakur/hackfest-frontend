@@ -2,7 +2,9 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useRole } from "@/lib/roleContext";
-import { X, Send, Mic, Square, ChevronDown, Sparkles, Shield, Factory, User } from "lucide-react";
+import { useDisruption } from "@/lib/disruptionContext";
+import { X, Send, Mic, Square, ChevronDown, Sparkles, Shield, Factory, User, ArrowRight, Activity, Clock, Package, AlertTriangle, Info } from "lucide-react";
+import { parseIntentAndParams, simulateScenario } from "@/lib/scenarioEngine";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ROLE-AWARE KNOWLEDGE BASE
@@ -116,12 +118,83 @@ function getAnswer(role, rawText) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Scenario Card Component
+// ─────────────────────────────────────────────────────────────────────────────
+function ScenarioCard({ data, config }) {
+  if (data.error) {
+    return <div style={{ color: "#ef4444", fontSize: 12 }}>{data.error}</div>;
+  }
+
+  const { recommendedAction, explanation, assumptions, title, confidence, current, projected } = data;
+
+  const MetricBox = ({ label, icon: Icon, before, after, isPositive }) => (
+    <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, padding: "8px 10px" }}>
+      <div style={{ fontSize: 9, textTransform: "uppercase", fontWeight: 700, color: "#64748b", display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}>
+        <Icon style={{ width: 10, height: 10 }} /> {label}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700 }}>
+        <span style={{ color: "#94a3b8" }}>{before}</span>
+        <ArrowRight style={{ width: 12, height: 12, color: "#64748b" }} />
+        <span style={{ color: isPositive ? "#ef4444" : "#4ade80" }}>{after}</span>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ background: "rgba(15,23,42,0.6)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 12, overflow: "hidden", marginTop: 4 }}>
+      {/* Header */}
+      <div style={{ background: "rgba(99,102,241,0.1)", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(99,102,241,0.15)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Sparkles style={{ width: 14, height: 14, color: "#818cf8" }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: "#818cf8", letterSpacing: "0.05em" }}>{title}</span>
+        </div>
+        <div style={{ fontSize: 10, fontWeight: 600, color: "#4ade80", background: "rgba(74,222,128,0.15)", padding: "2px 6px", borderRadius: 4 }}>
+          {confidence} CONFIDENCE
+        </div>
+      </div>
+
+      {/* Metrics Grid */}
+      <div style={{ padding: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <MetricBox label="Risk Score" icon={AlertTriangle} before={current.risk} after={projected.risk} isPositive={projected.risk > current.risk} />
+        <MetricBox label="Expected Delay" icon={Clock} before={`+${current.delay || 0}h`} after={`+${projected.delay}h`} isPositive={projected.delay > (current.delay || 0)} />
+        <MetricBox label="Capacity Impact" icon={Activity} before={`${current.capacityPct}%`} after={`${projected.capacityPct}%`} isPositive={projected.capacityPct < current.capacityPct} />
+        <MetricBox label="Orders At Risk" icon={Package} before={current.ordersAtRisk} after={projected.ordersAtRisk} isPositive={projected.ordersAtRisk > current.ordersAtRisk} />
+      </div>
+
+      {/* Recommendation */}
+      <div style={{ padding: "0 14px" }}>
+        <div style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 6, padding: "8px 12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: "#818cf8", textTransform: "uppercase" }}>Recommended Action</span>
+          <span style={{ fontSize: 11, fontWeight: 800, color: "#e0e7ff" }}>{recommendedAction}</span>
+        </div>
+      </div>
+
+      {/* Explanation */}
+      <div style={{ padding: "14px", fontSize: 12, lineHeight: 1.6, color: "#cbd5e1" }}>
+        {explanation}
+      </div>
+
+      {/* Assumptions */}
+      <div style={{ padding: "12px 14px", background: "rgba(0,0,0,0.2)", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ fontSize: 9, fontWeight: 700, color: "#64748b", textTransform: "uppercase", marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}>
+          <Info style={{ width: 10, height: 10 }} /> Scenario Assumptions
+        </div>
+        <ul style={{ margin: 0, paddingLeft: 16, fontSize: 10, color: "#94a3b8" }}>
+          {assumptions.map((a, i) => <li key={i} style={{ marginBottom: 2 }}>{a}</li>)}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ThreadLine Assistant Component
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function ThreadlineAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const { role } = useRole();
+  const { activeDisruption } = useDisruption();
   const [messages, setMessages] = useState([]);
   const [textInput, setTextInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -185,8 +258,15 @@ export function ThreadlineAssistant() {
     setTranscript("");
     setIsProcessing(true);
     setTimeout(() => {
-      const answer = getAnswer(role, text);
-      setMessages(prev => [...prev, { id: Date.now() + 1, role: "ai", text: answer }]);
+      // 1. Check if scenario intent
+      const { isScenario, params } = parseIntentAndParams(text);
+      if (isScenario) {
+        const scenarioData = simulateScenario(activeDisruption, params, role);
+        setMessages(prev => [...prev, { id: Date.now() + 1, role: "ai", type: "SCENARIO", data: scenarioData }]);
+      } else {
+        const answer = getAnswer(role, text);
+        setMessages(prev => [...prev, { id: Date.now() + 1, role: "ai", type: "TEXT", text: answer }]);
+      }
       setIsProcessing(false);
     }, 700);
   };
@@ -367,8 +447,9 @@ export function ThreadlineAssistant() {
                     </div>
                   )}
                   <div style={{
-                    maxWidth: "78%",
-                    padding: "10px 13px",
+                    maxWidth: msg.type === "SCENARIO" ? "95%" : "78%",
+                    width: msg.type === "SCENARIO" ? "100%" : "auto",
+                    padding: msg.type === "SCENARIO" ? 0 : "10px 13px",
                     borderRadius: msg.role === "user" ? "12px 12px 3px 12px" : "12px 12px 12px 3px",
                     fontSize: 12.5,
                     lineHeight: 1.65,
@@ -377,13 +458,19 @@ export function ThreadlineAssistant() {
                       background: config.accentMuted,
                       border: `1px solid ${config.accentBorder}`,
                       color: "#c7d2fe",
+                    } : msg.type === "SCENARIO" ? {
+                      background: "transparent",
                     } : {
                       background: "rgba(255,255,255,0.04)",
                       border: "1px solid rgba(255,255,255,0.07)",
                       color: "#cbd5e1",
                     }),
                   }}>
-                    {msg.text}
+                    {msg.type === "SCENARIO" ? (
+                      <ScenarioCard data={msg.data} config={config} />
+                    ) : (
+                      msg.text
+                    )}
                   </div>
                 </div>
               ))}
@@ -417,10 +504,15 @@ export function ThreadlineAssistant() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Suggestion Chips — show only on first message (greeting only) */}
-            {messages.length === 1 && (
+            {/* Suggestion Chips — show on first message or after scenario */}
+            {(messages.length === 1 || messages[messages.length - 1]?.type === "SCENARIO") && (
               <div style={{ padding: "8px 16px 4px", display: "flex", flexWrap: "wrap", gap: 6, borderTop: "1px solid rgba(255,255,255,0.04)", flexShrink: 0 }}>
-                {config.chips.map(chip => (
+                {(messages.length === 1 ? config.chips : [
+                  "What if we wait?", 
+                  "What if we reroute?", 
+                  "What if the outage lasts 10 hours?",
+                  "What if we split the shipment?"
+                ]).map(chip => (
                   <button
                     key={chip}
                     onClick={() => sendMessage(chip)}

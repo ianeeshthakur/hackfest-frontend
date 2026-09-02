@@ -33,7 +33,7 @@ export default function FactoryOwnerDashboard() {
 
   if (!factoryData) return null;
 
-  const isDisrupted = activeDisruption !== null;
+  const isDisrupted = activeDisruption !== null && activeDisruption.category === "FACTORY";
 
   // Base Orders
   const baseOrders = [
@@ -55,15 +55,15 @@ export default function FactoryOwnerDashboard() {
   let orders = baseOrders.map(o => ({ ...o, risk: 8, status: "ON TRACK" }));
 
   if (isDisrupted && currentConfig) {
-    if (activeDisruption === "powerCut") {
+    if (activeDisruption?.type === "powerCut") {
       metrics = { ...metrics, machineUptime: 62.4, powerStatus: "DISRUPTED", capacityUtil: 50, factoryRisk: 78 };
       orders[0] = { ...orders[0], risk: 72, status: "AT RISK" };
       orders[1] = { ...orders[1], risk: 65, status: "AT RISK" };
-    } else if (activeDisruption === "machineBreakdown") {
+    } else if (activeDisruption?.type === "machineBreakdown") {
       metrics = { ...metrics, machineUptime: 45.0, capacityUtil: 60, factoryRisk: 61 };
       orders[0] = { ...orders[0], risk: 61, status: "AT RISK" };
       orders[1] = { ...orders[1], risk: 50, status: "DELAYED" };
-    } else if (activeDisruption === "workerShortage") {
+    } else if (activeDisruption?.type === "workerShortage") {
       metrics = { ...metrics, workerAvailability: 64, capacityUtil: 60, factoryRisk: 45 };
       orders[0] = { ...orders[0], risk: 55, status: "DELAYED" };
     } else {
@@ -173,10 +173,10 @@ export default function FactoryOwnerDashboard() {
               </h2>
               
               <div className="grid grid-cols-1 gap-3">
-                <DisruptionBtn label="Power Cut" onClick={() => handleSimulateDisruption("Power Cut")} active={activeDisruption === "powerCut"} />
-                <DisruptionBtn label="Machine Breakdown" onClick={() => handleSimulateDisruption("Machine Breakdown")} active={activeDisruption === "machineBreakdown"} />
-                <DisruptionBtn label="Worker Shortage" onClick={() => handleSimulateDisruption("Worker Shortage")} active={activeDisruption === "workerShortage"} />
-                <DisruptionBtn label="Raw Material Delay" onClick={() => handleSimulateDisruption("Raw Material Delay")} active={activeDisruption === "rawMaterialDelay"} />
+                <DisruptionBtn label="Power Cut" onClick={() => handleSimulateDisruption("Power Cut")} active={activeDisruption?.type === "powerCut"} />
+                <DisruptionBtn label="Machine Breakdown" onClick={() => handleSimulateDisruption("Machine Breakdown")} active={activeDisruption?.type === "machineBreakdown"} />
+                <DisruptionBtn label="Worker Shortage" onClick={() => handleSimulateDisruption("Worker Shortage")} active={activeDisruption?.type === "workerShortage"} />
+                <DisruptionBtn label="Raw Material Delay" onClick={() => handleSimulateDisruption("Raw Material Delay")} active={activeDisruption?.type === "rawMaterialDelay"} />
               </div>
 
               {activeDisruption && (

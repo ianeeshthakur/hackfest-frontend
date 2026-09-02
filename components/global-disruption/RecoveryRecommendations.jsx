@@ -4,46 +4,9 @@ import { CheckCircle2, ChevronRight } from "lucide-react";
 export function RecoveryRecommendations({ activeEvent }) {
   if (!activeEvent) return null;
 
-  const getRecommendations = () => {
-    switch (activeEvent.type) {
-      case "workerShortage":
-        return [
-          { title: "Rebalance Production", delay: "+2h", risk: 31, recommended: true },
-          { title: "Split Order", delay: "+4h", risk: 39 },
-          { title: "Wait", delay: "+6h", risk: 52 }
-        ];
-      case "powerCut":
-        return [
-          { title: "Shift to Alternate Facility", delay: "+1h", risk: 15, recommended: true },
-          { title: "Run on Backup Generators", delay: "+4h", risk: 45 },
-          { title: "Wait for Grid Restoration", delay: "+8h", risk: 65 }
-        ];
-      case "machineBreakdown":
-        return [
-          { title: "Reroute to Line 4", delay: "+2h", risk: 22, recommended: true },
-          { title: "Expedite Maintenance", delay: "+6h", risk: 40 },
-          { title: "Subcontract Production", delay: "+12h", risk: 55 }
-        ];
-      case "rawMaterialDelay":
-        return [
-          { title: "Source from Supplier K-2", delay: "+3h", risk: 28, recommended: true },
-          { title: "Air Freight Current Order", delay: "+6h", risk: 35 },
-          { title: "Wait for Original Shipment", delay: "+24h", risk: 75 }
-        ];
-      case "logisticsDelay":
-        return [
-          { title: "Reroute via Mundra Port", delay: "+12h", risk: 30, recommended: true },
-          { title: "Air Freight Critical Units", delay: "+24h", risk: 45 },
-          { title: "Wait in Current Queue", delay: "+72h", risk: 85 }
-        ];
-      default:
-        return [
-          { title: "Analyze Impact First", delay: "TBD", risk: 50, recommended: true }
-        ];
-    }
-  };
-
-  const recs = getRecommendations();
+  const recs = activeEvent.recoveryOptions || [
+    { title: "Analyze Impact First", delay: "TBD", risk: 50, recommended: true }
+  ];
 
   return (
     <div className="flex flex-col gap-3 mt-4 font-body">

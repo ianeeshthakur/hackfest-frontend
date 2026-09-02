@@ -15,27 +15,36 @@ export function NetworkImpactVisualizer({ activeEvent }) {
   ];
 
   const getStatus = (nodeId) => {
-    switch (type) {
-      case "powerCut":
-      case "machineBreakdown":
-      case "workerShortage":
-        if (nodeId === "factory") return "disrupted";
-        if (nodeId === "warehouse" || nodeId === "port" || nodeId === "buyer") return "affected";
-        return "normal";
-        
-      case "rawMaterialDelay":
-        if (nodeId === "supplier") return "disrupted";
-        if (nodeId !== "supplier") return "affected"; // everything downstream
-        return "normal";
+    if (activeEvent.category === "FACTORY") {
+      switch (type) {
+        case "powerCut":
+        case "machineBreakdown":
+        case "workerShortage":
+          if (nodeId === "factory") return "disrupted";
+          if (nodeId === "warehouse" || nodeId === "port" || nodeId === "buyer") return "affected";
+          return "normal";
+          
+        case "rawMaterialDelay":
+          if (nodeId === "supplier") return "disrupted";
+          if (nodeId !== "supplier") return "affected"; // everything downstream
+          return "normal";
 
-      case "logisticsDelay":
-        if (nodeId === "port") return "disrupted";
-        if (nodeId === "buyer") return "affected";
-        return "normal";
+        case "logisticsDelay":
+          if (nodeId === "port") return "disrupted";
+          if (nodeId === "buyer") return "affected";
+          return "normal";
 
-      default:
-        return "normal";
+        default:
+          return "normal";
+      }
+    } else if (activeEvent.category === "SHIPMENT") {
+      // General flow for shipment disruptions
+      if (nodeId === "port") return "disrupted";
+      if (nodeId === "buyer") return "affected";
+      if (nodeId === "warehouse") return type === "GEOPOLITICAL_EVENT" ? "affected" : "normal";
+      return "normal";
     }
+    return "normal";
   };
 
   const getPathStatus = (from, to) => {
@@ -75,7 +84,7 @@ export function NetworkImpactVisualizer({ activeEvent }) {
           );
         })}
         {/* Recovery alternate path (mock) */}
-        {type === "logisticsDelay" && (
+        {(type === "logisticsDelay" || activeEvent.category === "SHIPMENT") && (
            <path 
              d={`M 65% 50% Q 80% 20% 95% 50%`}
              fill="none"

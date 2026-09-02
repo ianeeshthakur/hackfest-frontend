@@ -12,54 +12,8 @@ export function GlobalDisruptionCenter() {
 
   const isIdle = !currentConfig || simulationState === "IDLE";
   
-  // Default values if no disruption
+  // Use the full object directly
   const activeEvent = isIdle ? null : currentConfig;
-  
-  // Dynamic UI based on disruption type
-  const getDisruptionSpecifics = () => {
-    if (isIdle) return null;
-    
-    switch (activeEvent.type) {
-      case "powerCut":
-        return {
-          title: "POWER CUT",
-          subtitle: "Grid power failure in Sector 4",
-          metrics: { units: 4200, capacityLost: 18, expectedDelay: 4 }
-        };
-      case "machineBreakdown":
-        return {
-          title: "MACHINE BREAKDOWN",
-          subtitle: "Spinning Line 3 unavailable",
-          metrics: { units: 7800, capacityLost: 31, expectedDelay: 8 }
-        };
-      case "workerShortage":
-        return {
-          title: "WORKER SHORTAGE",
-          subtitle: "Severe worker shortage (25% absenteeism)",
-          metrics: { units: 5600, capacityLost: 24, expectedDelay: 6 }
-        };
-      case "rawMaterialDelay":
-        return {
-          title: "RAW MATERIAL DELAY",
-          subtitle: "Delay from Supplier T-4",
-          metrics: { units: 11200, capacityLost: 37, expectedDelay: 12 }
-        };
-      case "logisticsDelay":
-        return {
-          title: "PORT DELAY",
-          subtitle: "Transit delay on critical shipment route",
-          metrics: { units: 15000, capacityLost: 0, expectedDelay: 48 }
-        };
-      default:
-        return {
-          title: "UNKNOWN DISRUPTION",
-          subtitle: "System anomaly detected",
-          metrics: { units: 0, capacityLost: 0, expectedDelay: 0 }
-        };
-    }
-  };
-
-  const specifics = getDisruptionSpecifics();
 
   return (
     <div className="flex flex-col h-full bg-slate-50 overflow-y-auto">
@@ -71,11 +25,11 @@ export function GlobalDisruptionCenter() {
             <p className="text-slate-500 mt-2 font-medium">Real-time visibility into disruption propagation, operational impact and recovery.</p>
           </div>
           
-          {specifics && (
+          {activeEvent && (
             <div className="flex gap-4 items-center">
               <div className="bg-red-50 border border-red-100 rounded-lg p-3 text-right">
                 <div className="text-[10px] uppercase font-bold text-red-500 tracking-wider">Active Event</div>
-                <div className="text-sm font-bold text-red-700">{specifics.title} DETECTED</div>
+                <div className="text-sm font-bold text-red-700">{activeEvent.title}</div>
               </div>
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-right">
                 <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Case ID</div>
@@ -122,19 +76,21 @@ export function GlobalDisruptionCenter() {
                   <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
                     <Package className="h-3.5 w-3.5" /> Affected Units
                   </div>
-                  <div className="text-2xl font-bold text-slate-900">{specifics.metrics.units.toLocaleString()}</div>
+                  <div className="text-2xl font-bold text-slate-900">{activeEvent.metrics?.units?.toLocaleString() || 0}</div>
                 </div>
                 <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
                   <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
-                    <Activity className="h-3.5 w-3.5" /> Capacity Lost
+                    <Activity className="h-3.5 w-3.5" /> {activeEvent.category === "SHIPMENT" ? "Demurrage Risk" : "Capacity Lost"}
                   </div>
-                  <div className="text-2xl font-bold text-red-600">-{specifics.metrics.capacityLost}%</div>
+                  <div className="text-2xl font-bold text-red-600">
+                    {activeEvent.category === "SHIPMENT" ? "High" : `-${activeEvent.metrics?.capacityLost || 0}%`}
+                  </div>
                 </div>
                 <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
                   <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
                     <Clock className="h-3.5 w-3.5" /> Expected Delay
                   </div>
-                  <div className="text-2xl font-bold text-amber-600">+{specifics.metrics.expectedDelay}h</div>
+                  <div className="text-2xl font-bold text-amber-600">+{activeEvent.metrics?.expectedDelay || 0}h</div>
                 </div>
                 <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
                   <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">

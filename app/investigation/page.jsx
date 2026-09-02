@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Sidebar } from "@/components/command-center/Sidebar";
+import { InvestigationCopilot } from "@/components/ui/InvestigationCopilot";
 import { Search, Activity, Zap, Users, Cloud, Truck, TrendingUp, AlertTriangle, HelpCircle, CheckCircle2 } from "lucide-react";
 
 export default function DisruptionInvestigation() {
@@ -221,6 +222,9 @@ export default function DisruptionInvestigation() {
           </div>
         </div>
       </main>
+
+      {/* Investigation Copilot — context-aware AI agent */}
+      <InvestigationCopilot />
 
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes scan {

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Sidebar } from "@/components/command-center/Sidebar";
+import { useRole } from "@/lib/roleContext";
 import { ExplainableRiskScore } from "@/components/ui/ExplainableRiskScore";
 import { Package, X, ArrowRight, AlertTriangle, Clock, BarChart2 } from "lucide-react";
 
@@ -66,12 +67,15 @@ const TOP_METRICS = [
 ];
 
 export default function ImpactInventory() {
+  const { role } = useRole();
+  const isBuyer = role === "buyer";
   const [selected, setSelected] = useState(null);
 
-  const order = ORDERS.find(o => o.id === selected);
+  const displayOrders = isBuyer ? ORDERS.filter(o => o.buyer.includes("Zara")) : ORDERS;
+  const order = displayOrders.find(o => o.id === selected);
 
   return (
-    <div className="flex h-screen bg-[#06090F] text-slate-100 overflow-hidden font-body">
+    <div className={`flex h-screen ${isBuyer ? "bg-slate-50 text-slate-900" : "bg-[#06090F] text-slate-100"} overflow-hidden font-body`}>
       <Sidebar />
 
       <main className="flex-1 overflow-hidden flex flex-col">
@@ -82,7 +86,7 @@ export default function ImpactInventory() {
               <span className="p-2 bg-amber-500/10 rounded-lg text-amber-400 border border-amber-500/20">
                 <BarChart2 className="h-5 w-5" />
               </span>
-              <h1 className="text-2xl font-bold tracking-tight text-white">Impact & Inventory</h1>
+              <h1 className={`text-2xl font-bold tracking-tight ${isBuyer ? "text-slate-900" : "text-white"}`}>Impact & Inventory</h1>
             </div>
             <p className="text-slate-500 text-sm ml-[52px]">Real-time disruption impact on active orders and inventory levels — Case TL-4821</p>
           </div>
@@ -110,9 +114,9 @@ export default function ImpactInventory() {
               {/* Order Cards */}
               <div className={`space-y-4 ${selected ? 'lg:col-span-3' : 'lg:col-span-5'}`}>
                 <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                  Affected Orders ({ORDERS.length})
+                  Affected Orders ({displayOrders.length})
                 </h2>
-                {ORDERS.map((o) => (
+                {displayOrders.map((o) => (
                   <button
                     key={o.id}
                     onClick={() => setSelected(selected === o.id ? null : o.id)}
@@ -194,7 +198,7 @@ export default function ImpactInventory() {
                         <div className="space-y-2 mt-2">
                           <Row label="Product" value={order.product} />
                           <Row label="Quantity" value={order.qty} />
-                          <Row label="Buyer" value={order.buyer} />
+                          {!isBuyer && <Row label="Buyer" value={order.buyer} />}
                           <Row label="Certification" value={order.certificationMatch} />
                         </div>
                       </section>

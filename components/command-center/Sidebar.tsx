@@ -2,6 +2,7 @@
 
 import React from "react";
 import { ThreadlineAssistant } from "@/components/ui/ThreadlineAssistant";
+import { useRole, getActiveNav } from "@/lib/roleContext";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -16,9 +17,12 @@ import {
   Zap,
   Map,
   ClipboardList,
+  Search,
+  BarChart2,
+  RefreshCcw,
+  GitMerge,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { NAV_ITEMS } from "@/lib/command-center-data";
 
 const iconMap: Record<string, React.ElementType> = {
   LayoutDashboard,
@@ -31,10 +35,16 @@ const iconMap: Record<string, React.ElementType> = {
   Settings,
   Map,
   ClipboardList,
+  Search,
+  BarChart2,
+  RefreshCcw,
+  GitMerge,
 };
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { role } = useRole();
+  const navItems = getActiveNav(role);
 
   return (
     <aside className="flex h-screen w-[220px] flex-shrink-0 flex-col border-r border-slate-200 bg-white">
@@ -56,7 +66,7 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-4">
         <div className="space-y-0.5">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const Icon = iconMap[item.iconName] || LayoutDashboard;
             const isActive = pathname === item.href;
             return (

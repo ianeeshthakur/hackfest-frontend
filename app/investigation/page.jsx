@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Sidebar } from "@/components/command-center/Sidebar";
 import { InvestigationCopilot } from "@/components/ui/InvestigationCopilot";
+import { RoleGuard } from "@/components/ui/RoleGuard";
 import { Search, Activity, Zap, Users, Cloud, Truck, TrendingUp, AlertTriangle, HelpCircle, CheckCircle2 } from "lucide-react";
 
 export default function DisruptionInvestigation() {
@@ -80,6 +81,7 @@ export default function DisruptionInvestigation() {
   ];
 
   return (
+    <RoleGuard allowedRole="owner">
     <div className="flex h-screen bg-[#06090F] text-slate-100 overflow-hidden font-body selection:bg-indigo-500/30">
       <Sidebar />
 
@@ -233,5 +235,6 @@ export default function DisruptionInvestigation() {
         }
       `}} />
     </div>
+    </RoleGuard>
   );
 }

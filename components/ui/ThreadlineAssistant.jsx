@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { useRole } from "@/lib/roleContext";
 import { X, Send, Mic, Square, ChevronDown, Sparkles, Shield, Factory, User } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -120,7 +121,7 @@ function getAnswer(role, rawText) {
 
 export function ThreadlineAssistant() {
   const [isOpen, setIsOpen] = useState(false);
-  const [role, setRole] = useState(null); // null | "owner" | "buyer"
+  const { role } = useRole();
   const [messages, setMessages] = useState([]);
   const [textInput, setTextInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -349,90 +350,6 @@ export function ThreadlineAssistant() {
           )}
         </div>
 
-        {/* ── Role Selection ── */}
-        {!role && (
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 24px", gap: 24 }}>
-            <div style={{ textAlign: "center", marginBottom: 8 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#94a3b8", marginBottom: 6 }}>
-                Select your role to get started
-              </div>
-              <div style={{ fontSize: 11, color: "#475569", lineHeight: 1.6 }}>
-                ThreadLine AI provides role-filtered information.<br />
-                Responses are tailored to your access level.
-              </div>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%" }}>
-              {/* Factory Owner */}
-              <button
-                id="threadline-role-owner"
-                onClick={() => selectRole("owner")}
-                style={{
-                  display: "flex", alignItems: "center", gap: 14,
-                  padding: "16px 18px", borderRadius: 12, cursor: "pointer",
-                  background: "rgba(99,102,241,0.06)",
-                  border: "1px solid rgba(99,102,241,0.2)",
-                  textAlign: "left", transition: "all 0.2s",
-                  width: "100%",
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = "rgba(99,102,241,0.12)"; e.currentTarget.style.borderColor = "rgba(99,102,241,0.4)"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "rgba(99,102,241,0.06)"; e.currentTarget.style.borderColor = "rgba(99,102,241,0.2)"; }}
-              >
-                <div style={{
-                  width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-                  background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <Factory style={{ width: 18, height: 18, color: "#818cf8" }} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", marginBottom: 2 }}>Factory Owner</div>
-                  <div style={{ fontSize: 11, color: "#64748b", lineHeight: 1.5 }}>Full operational context — root cause, supplier options, recovery plans</div>
-                </div>
-              </button>
-
-              {/* Buyer */}
-              <button
-                id="threadline-role-buyer"
-                onClick={() => selectRole("buyer")}
-                style={{
-                  display: "flex", alignItems: "center", gap: 14,
-                  padding: "16px 18px", borderRadius: 12, cursor: "pointer",
-                  background: "rgba(14,165,233,0.06)",
-                  border: "1px solid rgba(14,165,233,0.2)",
-                  textAlign: "left", transition: "all 0.2s",
-                  width: "100%",
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = "rgba(14,165,233,0.12)"; e.currentTarget.style.borderColor = "rgba(14,165,233,0.4)"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "rgba(14,165,233,0.06)"; e.currentTarget.style.borderColor = "rgba(14,165,233,0.2)"; }}
-              >
-                <div style={{
-                  width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-                  background: "rgba(14,165,233,0.12)", border: "1px solid rgba(14,165,233,0.3)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <User style={{ width: 18, height: 18, color: "#38bdf8" }} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", marginBottom: 2 }}>Buyer</div>
-                  <div style={{ fontSize: 11, color: "#64748b", lineHeight: 1.5 }}>Business-impact view — order status, delays, recovery options</div>
-                </div>
-              </button>
-            </div>
-
-            {/* Trust badge */}
-            <div style={{
-              display: "flex", alignItems: "center", gap: 6,
-              padding: "8px 12px", borderRadius: 8,
-              background: "rgba(74,222,128,0.05)", border: "1px solid rgba(74,222,128,0.15)",
-            }}>
-              <Shield style={{ width: 11, height: 11, color: "#4ade80" }} />
-              <span style={{ fontSize: 10, color: "#4ade80", fontWeight: 600, letterSpacing: "0.04em" }}>
-                ROLE-FILTERED • SENSITIVE DATA PROTECTED
-              </span>
-            </div>
-          </div>
-        )}
 
         {/* ── Chat Area ── */}
         {role && config && (

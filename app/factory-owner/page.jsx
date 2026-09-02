@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/command-center/Sidebar";
 import { factories, simulateDisruption } from "@/lib/clusterData";
 import { Activity, Zap, Users, Factory, Package, AlertTriangle, Play, ShieldAlert } from "lucide-react";
 import { ExplainableRiskScore } from "@/components/ui/ExplainableRiskScore";
+import { RoleGuard } from "@/components/ui/RoleGuard";
 
 export default function FactoryOwnerDashboard() {
   // Hardcoded to F-013 (Tiruppur Cotton Spinning Mill) to act as "Suresh Textiles"
@@ -104,6 +105,7 @@ export default function FactoryOwnerDashboard() {
   const isDisrupted = factoryData.status !== "OPERATIONAL";
 
   return (
+    <RoleGuard allowedRole="owner">
     <div className="flex h-screen bg-[#0B0F17] text-slate-100 overflow-hidden font-body selection:bg-teal-500 selection:text-white">
       {/* Global Sidebar */}
       <Sidebar />
@@ -274,6 +276,7 @@ export default function FactoryOwnerDashboard() {
         </div>
       </div>
     </div>
+  </RoleGuard>
   );
 }
 

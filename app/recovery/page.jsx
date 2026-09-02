@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Sidebar } from "@/components/command-center/Sidebar";
 import { ExplainableRiskScore } from "@/components/ui/ExplainableRiskScore";
 import { Sparkles, Clock, DollarSign, ShieldAlert, CheckCircle2, ArrowRight, BarChart3, Map } from "lucide-react";
+import { RoleGuard } from "@/components/ui/RoleGuard";
 import Link from "next/link";
 
 const SCENARIOS = [
@@ -119,6 +120,7 @@ export default function RecoveryScenarios() {
   const selectedScenario = SCENARIOS.find(s => s.id === selected);
 
   return (
+    <RoleGuard allowedRole="owner">
     <div className="flex h-screen bg-[#06090F] text-slate-100 overflow-hidden font-body">
       <Sidebar />
 
@@ -373,5 +375,6 @@ export default function RecoveryScenarios() {
         </div>
       </main>
     </div>
+    </RoleGuard>
   );
 }

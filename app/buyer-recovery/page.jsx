@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Sidebar } from "@/components/command-center/Sidebar";
 import { ExplainableRiskScore } from "@/components/ui/ExplainableRiskScore";
+import { RoleGuard } from "@/components/ui/RoleGuard";
 import {
   BUYER_RECOVERY_OPTIONS,
   BUYER_RECOVERY_CONTEXT,
@@ -60,6 +61,7 @@ export default function BuyerRecovery() {
   const selectedOption = BUYER_RECOVERY_OPTIONS.find((o) => o.id === selected);
 
   return (
+    <RoleGuard allowedRole="buyer">
     <div className="flex h-screen bg-slate-50 text-slate-900 overflow-hidden font-body">
       <Sidebar />
 
@@ -295,5 +297,6 @@ export default function BuyerRecovery() {
         </div>
       </main>
     </div>
+    </RoleGuard>
   );
 }

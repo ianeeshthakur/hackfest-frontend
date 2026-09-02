@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, Inter, IBM_Plex_Mono } from "next/font/google";
 import { AuditProvider } from "@/lib/auditContext";
+import { RoleProvider } from "@/lib/roleContext";
+import { RoleSwitcher } from "@/components/ui/RoleSwitcher";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -41,9 +43,12 @@ export default function RootLayout({
       className={`${spaceGrotesk.variable} ${inter.variable} ${ibmPlexMono.variable} dark`}
     >
       <body className="min-h-screen bg-bg text-slate-100 font-body antialiased selection:bg-teal selection:text-bg">
-        <AuditProvider>
-          {children}
-        </AuditProvider>
+        <RoleProvider>
+          <AuditProvider>
+            {children}
+            <RoleSwitcher />
+          </AuditProvider>
+        </RoleProvider>
       </body>
     </html>
   );

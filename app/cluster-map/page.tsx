@@ -12,6 +12,7 @@ import { AlternativesPanel } from "@/components/cluster-map/AlternativesPanel";
 import { NetworkCopilot } from "@/components/cluster-map/NetworkCopilot";
 import { factories, clusters, INDIA_VIEW } from "@/lib/clusterData";
 import { updateContext } from "@/lib/voiceCommands";
+import { useRole } from "@/lib/roleContext";
 import type { FilterState } from "@/components/cluster-map/types";
 
 // Dynamically import the map (Leaflet requires browser APIs, SSR disabled)
@@ -30,6 +31,8 @@ const ClusterMap = dynamic(
 const INDIA = { longitude: INDIA_VIEW.longitude, latitude: INDIA_VIEW.latitude, zoom: INDIA_VIEW.zoom };
 
 export default function ClusterMapPage() {
+  const { role } = useRole();
+  const isBuyer = role === "buyer";
   const [filters, setFilters] = useState<FilterState>({
     cluster: "all",
     type: "all",
@@ -55,14 +58,18 @@ export default function ClusterMapPage() {
   }, [activeFactoryId]);
 
   const filteredFactories = useMemo(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (factories as any[]).filter((f) => {
+      // Buyer only sees the disrupted factory and alternate factories (SuppA-T02, etc.)
+      if (isBuyer) {
+        if (!["F-X7K92", "F-M4R11", "SuppA-T02", "SuppA-S07"].includes(f.id)) return false;
+      }
+      
       const clusterMatch = filters.cluster === "all" || f.clusterId === filters.cluster;
       const typeMatch    = filters.type === "all"    || f.type === filters.type;
       const statusMatch  = filters.status === "all"  || f.status === filters.status;
       return clusterMatch && typeMatch && statusMatch;
     });
-  }, [filters]);
+  }, [filters, isBuyer]);
 
   const handleClusterSelect = useCallback((clusterId: string) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -123,6 +130,7 @@ export default function ClusterMapPage() {
     <div className="cc-light-root flex h-screen overflow-hidden bg-slate-100">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden relative">
+        {isBuyer && <div className="bg-sky-500 text-white text-xs font-bold px-4 py-1.5 text-center flex items-center justify-center gap-2 tracking-widest uppercase"><span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> Buyer View: Network Filtered to Recovery Options</div>}
         <MapHeader
           filters={filters}
           onFiltersChange={setFilters}

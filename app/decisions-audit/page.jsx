@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Sidebar } from "@/components/command-center/Sidebar";
 import { useAudit, ACTOR } from "@/lib/auditContext";
+import { RoleGuard } from "@/components/ui/RoleGuard";
 import {
   ShieldCheck, Filter, Clock, TrendingDown, TrendingUp,
   Minus, CheckCircle2, AlertCircle, Clock3, Zap,
@@ -203,6 +204,7 @@ export default function DecisionsAuditPage() {
   const pending      = entries.filter(e => e.status === "PENDING").length;
 
   return (
+    <RoleGuard allowedRole="owner">
     <div style={{ display: "flex", height: "100vh", background: "#06090F", color: "#f1f5f9", overflow: "hidden", fontFamily: "var(--font-body)" }}>
       <Sidebar />
 
@@ -338,5 +340,6 @@ export default function DecisionsAuditPage() {
         </div>
       </main>
     </div>
+    </RoleGuard>
   );
 }

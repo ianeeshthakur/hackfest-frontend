@@ -7,6 +7,7 @@ import { RouteBoard } from "@/components/global-logistics/RouteBoard";
 import { NetworkWatch } from "@/components/global-logistics/NetworkWatch";
 import { PortStatus } from "@/components/global-logistics/PortStatus";
 import { METRICS } from "@/lib/globalLogisticsData";
+import { RoleGuard } from "@/components/ui/RoleGuard";
 
 export default function GlobalLogisticsPage() {
   const [simState, setSimState] = useState("IDLE");
@@ -105,6 +106,7 @@ export default function GlobalLogisticsPage() {
   };
 
   return (
+    <RoleGuard allowedRole="owner">
     <div className="flex flex-col h-full bg-[#f8fafc]">
       <LogisticsHeader onSimulateDisruption={startSimulation} simState={simState} />
       
@@ -130,5 +132,6 @@ export default function GlobalLogisticsPage() {
         </div>
       </div>
     </div>
+    </RoleGuard>
   );
 }

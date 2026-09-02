@@ -23,6 +23,7 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
+import { RoleGuard } from "@/components/ui/RoleGuard";
 
 const STATUS_STYLES = {
   ON_TRACK:      { bg: "bg-emerald-50",   border: "border-emerald-200", text: "text-emerald-700",  dot: "bg-emerald-500" },
@@ -49,6 +50,7 @@ export default function BuyerDashboard() {
     setExpandedTimeline((prev) => ({ ...prev, [id]: !prev[id] }));
 
   return (
+    <RoleGuard allowedRole="buyer">
     <div className="flex h-screen bg-slate-50 text-slate-900 overflow-hidden font-body">
       <Sidebar />
 
@@ -399,6 +401,7 @@ export default function BuyerDashboard() {
         </div>
       </main>
     </div>
+    </RoleGuard>
   );
 }
 

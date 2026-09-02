@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Sidebar } from "@/components/command-center/Sidebar";
 import { ExplainableRiskScore } from "@/components/ui/ExplainableRiskScore";
+import { RoleGuard } from "@/components/ui/RoleGuard";
 import {
   FALSE_DIV_SUMMARY,
   FALSE_DIV_CASES,
@@ -45,6 +46,7 @@ export default function FalseDiversification() {
     setOpenWhy((prev) => ({ ...prev, [id]: !prev[id] }));
 
   return (
+    <RoleGuard allowedRole="owner">
     <div className="flex h-screen bg-[#06090F] text-slate-100 overflow-hidden font-body">
       <Sidebar />
 
@@ -323,6 +325,7 @@ export default function FalseDiversification() {
         </div>
       </main>
     </div>
+    </RoleGuard>
   );
 }
 

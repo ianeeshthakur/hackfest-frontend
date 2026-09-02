@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { ThreadlineAssistant } from "@/components/ui/ThreadlineAssistant";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -88,7 +89,9 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-slate-100 px-4 py-3">
+      <div className="border-t border-slate-100 px-4 py-3 space-y-3">
+        {/* ThreadLine AI Assistant trigger */}
+        <ThreadlineAssistant />
         <div className="flex items-center gap-2">
           <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" />
           <span className="text-[11px] font-medium text-slate-500">All systems operational</span>

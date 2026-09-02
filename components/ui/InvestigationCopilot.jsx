@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { Mic, Square, Send, Zap, Volume2, ChevronDown } from "lucide-react";
+import { useAudioPlayer } from "@/lib/voice/useAudioPlayer";
 
 // ─────────────────────────────────────────────
 // Investigation-aware intent parser
@@ -105,6 +106,8 @@ export function InvestigationCopilot() {
   const synthRef = useRef(null);
   const messagesEndRef = useRef(null);
 
+  const { play, stop, playbackState } = useAudioPlayer();
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, state]);
@@ -135,26 +138,36 @@ export function InvestigationCopilot() {
         } else setState("IDLE");
       };
     }
-    synthRef.current = window.speechSynthesis;
   }, [transcript, state]);
+
+  // Sync AudioPlayer state to component UI state
+  useEffect(() => {
+    if (playbackState === "GENERATING") {
+      setState("PROCESSING");
+    } else if (playbackState === "PLAYING") {
+      setState("RESPONDING");
+    } else if (playbackState === "IDLE" && (state === "RESPONDING" || state === "PROCESSING")) {
+      setState("IDLE");
+    } else if (playbackState === "ERROR") {
+      setState("ERROR");
+      setResponseText("Audio playback failed.");
+    }
+  }, [playbackState]);
 
   const processText = (text) => {
     if (!text.trim()) { setState("IDLE"); return; }
     setState("PROCESSING");
     setMessages(prev => [...prev, { role: "user", text }]);
-    setTimeout(() => {
-      const reply = parseInvestigationIntent(text);
-      setResponseText(reply);
-      setMessages(prev => [...prev, { role: "ai", text: reply }]);
-      setState("RESPONDING");
-      if (synthRef.current) {
-        synthRef.current.cancel();
-        const utt = new SpeechSynthesisUtterance(reply);
-        utt.rate = 0.95;
-        utt.onend = () => setTimeout(() => setState("IDLE"), 1500);
-        synthRef.current.speak(utt);
-      }
-    }, 650);
+    
+    // Process intent instantly (no setTimeout delay)
+    const reply = parseInvestigationIntent(text);
+    setResponseText(reply);
+    setMessages(prev => [...prev, { role: "ai", text: reply }]);
+    
+    // Speak the response using Neural TTS
+    if (reply) {
+      play(reply);
+    }
   };
 
   const toggleListening = () => {
@@ -162,7 +175,7 @@ export function InvestigationCopilot() {
       recognitionRef.current?.stop();
       setState("PROCESSING");
     } else if (state === "RESPONDING" || state === "PROCESSING") {
-      synthRef.current?.cancel();
+      stop();
       recognitionRef.current?.stop();
       setState("IDLE");
     } else {

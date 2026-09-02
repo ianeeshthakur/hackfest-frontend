@@ -56,29 +56,34 @@ export function ThreadlineAIAgent() {
     setInput("");
     setIsTyping(true);
 
-    // Simulate network delay
-    setTimeout(() => {
-      const response = generateAIResponse(text, pathname, role, disruptionContext);
-      let aiMsg;
-      let spokenText = "";
-      
-      if (typeof response === "string") {
-        aiMsg = { id: Date.now() + 1, sender: "ai", text: response };
-        spokenText = response;
-      } else {
-        // It's a structured object from the new engine
-        aiMsg = { id: Date.now() + 1, sender: "ai", text: response.text, obj: response };
-        spokenText = response.text;
-      }
-      
-      setMessages((prev) => [...prev, aiMsg]);
-      setIsTyping(false);
-      
-      // Use neural TTS
-      if (spokenText) {
-        play(spokenText);
-      }
-    }, 1000);
+    const t1 = performance.now();
+    console.log(`[TELEMETRY] T1: User submitted text at ${t1.toFixed(2)}ms`);
+
+    // Remove the artificial 1000ms setTimeout simulation
+    const t3 = performance.now();
+    const response = generateAIResponse(text, pathname, role, disruptionContext);
+    const t4 = performance.now();
+    console.log(`[TELEMETRY] T4: AI response generated. AI Generation Latency (T4 - T3): ${(t4 - t3).toFixed(2)}ms`);
+    
+    let aiMsg;
+    let spokenText = "";
+    
+    if (typeof response === "string") {
+      aiMsg = { id: Date.now() + 1, sender: "ai", text: response };
+      spokenText = response;
+    } else {
+      // It's a structured object from the new engine
+      aiMsg = { id: Date.now() + 1, sender: "ai", text: response.text, obj: response };
+      spokenText = response.text;
+    }
+    
+    setMessages((prev) => [...prev, aiMsg]);
+    setIsTyping(false);
+    
+    // Use neural TTS
+    if (spokenText) {
+      play(spokenText);
+    }
   };
 
   const handleKeyDown = (e) => {

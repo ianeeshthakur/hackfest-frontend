@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Mic, MicOff, Square, Activity, Send, Volume2, Minus, ChevronUp } from "lucide-react";
 import { parseIntent, updateContext } from "@/lib/voiceCommands";
+import { useAudioPlayer } from "@/lib/voice/useAudioPlayer";
 
 export function NetworkCopilot({ onIntentAction }) {
   const [state, setState] = useState("IDLE"); // IDLE, LISTENING, PROCESSING, RESPONDING, ERROR
@@ -10,9 +11,9 @@ export function NetworkCopilot({ onIntentAction }) {
   const [isMinimized, setIsMinimized] = useState(false);
   
   const recognitionRef = useRef(null);
-  const synthRef = useRef(null);
+  const { play, stop, playbackState, isMuted, setIsMuted } = useAudioPlayer();
 
-  // Initialize Speech Recognition & Synthesis
+  // Initialize Speech Recognition
   useEffect(() => {
     if (typeof window !== "undefined") {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -49,10 +50,22 @@ export function NetworkCopilot({ onIntentAction }) {
         setState("ERROR");
         setResponseText("Speech recognition not supported in this browser. Use text.");
       }
-
-      synthRef.current = window.speechSynthesis;
     }
   }, [transcript, state]);
+
+  // Sync AudioPlayer state to component UI state
+  useEffect(() => {
+    if (playbackState === "GENERATING") {
+      setState("PROCESSING");
+    } else if (playbackState === "PLAYING") {
+      setState("RESPONDING");
+    } else if (playbackState === "IDLE" && (state === "RESPONDING" || state === "PROCESSING")) {
+      setState("IDLE");
+    } else if (playbackState === "ERROR") {
+      setState("ERROR");
+      setResponseText("Audio playback failed.");
+    }
+  }, [playbackState]);
 
   const processTranscript = (text) => {
     if (!text.trim()) {
@@ -61,28 +74,17 @@ export function NetworkCopilot({ onIntentAction }) {
     }
     setState("PROCESSING");
     
-    // Simulate slight network delay for realism
-    setTimeout(() => {
-      const result = parseIntent(text);
-      setResponseText(result.responseText);
-      setState("RESPONDING");
-      
-      // Execute the UI action
-      onIntentAction(result);
-      
-      // Speak the response
-      if (synthRef.current) {
-        synthRef.current.cancel(); // Cancel any ongoing speech
-        const utterance = new SpeechSynthesisUtterance(result.responseText);
-        utterance.rate = 0.95;
-        
-        utterance.onend = () => {
-          setTimeout(() => setState("IDLE"), 2000);
-        };
-        
-        synthRef.current.speak(utterance);
-      }
-    }, 600);
+    // Process intent instantly
+    const result = parseIntent(text);
+    setResponseText(result.responseText);
+    
+    // Execute the UI action
+    onIntentAction(result);
+    
+    // Speak the response using Neural TTS (no artificial timeout)
+    if (result.responseText) {
+      play(result.responseText);
+    }
   };
 
   const toggleListening = () => {
@@ -90,7 +92,7 @@ export function NetworkCopilot({ onIntentAction }) {
       recognitionRef.current?.stop();
       setState("PROCESSING");
     } else if (state === "RESPONDING" || state === "PROCESSING") {
-      synthRef.current?.cancel();
+      stop();
       recognitionRef.current?.stop();
       setState("IDLE");
     } else {

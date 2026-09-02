@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { Sparkles, X, Send, User, ChevronUp } from "lucide-react";
+import { Sparkles, X, Send, User, ChevronUp, Volume2, VolumeX, Loader2, RotateCcw } from "lucide-react";
 import { useRole } from "@/lib/roleContext";
 import { useDisruption } from "@/lib/disruptionContext";
 import { getPageContext, getSuggestedQuestions, generateAIResponse } from "@/lib/aiAgentLogic";
+import { useAudioPlayer } from "@/lib/voice/useAudioPlayer";
 
 export function ThreadlineAIAgent() {
   const [isOpen, setIsOpen] = useState(false);
@@ -15,16 +16,12 @@ export function ThreadlineAIAgent() {
   
   const pathname = usePathname();
   const { role } = useRole();
-  const disruptionContext = useDisruption(); // Contains currentConfig and simulationState
+  const disruptionContext = useDisruption(); 
   
   const messagesEndRef = useRef(null);
-  const synthRef = useRef(null);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      synthRef.current = window.speechSynthesis;
-    }
-  }, []);
+  
+  // Use new audio player hook
+  const { play, stop, playbackState, isMuted, setIsMuted } = useAudioPlayer();
 
   const pageContext = getPageContext(pathname, role);
   const suggestedQuestions = getSuggestedQuestions(pathname, role);
@@ -50,6 +47,9 @@ export function ThreadlineAIAgent() {
   const handleSend = async (text) => {
     if (!text.trim()) return;
 
+    // Interrupt any playing audio if user sends a new message
+    stop();
+
     // Add user message
     const userMsg = { id: Date.now(), sender: "user", text };
     setMessages((prev) => [...prev, userMsg]);
@@ -74,14 +74,9 @@ export function ThreadlineAIAgent() {
       setMessages((prev) => [...prev, aiMsg]);
       setIsTyping(false);
       
-      // Speak the response
-      if (synthRef.current && spokenText) {
-        synthRef.current.cancel();
-        // Remove markdown bold symbols for cleaner speech
-        const cleanText = spokenText.replace(/\*\*/g, "");
-        const utterance = new SpeechSynthesisUtterance(cleanText);
-        utterance.rate = 0.95;
-        synthRef.current.speak(utterance);
+      // Use neural TTS
+      if (spokenText) {
+        play(spokenText);
       }
     }, 1000);
   };
@@ -143,17 +138,28 @@ export function ThreadlineAIAgent() {
                 {role === "owner" ? "Factory Owner" : "Buyer-Secured"}
               </span>
             </span>
-            <span className="text-[11px] text-indigo-300 font-medium tracking-widest uppercase">
-              {pageContext.title}
-            </span>
+            <div className="flex items-center gap-2 text-[11px] font-medium tracking-widest uppercase">
+              <span className="text-indigo-300">{pageContext.title}</span>
+              {playbackState === "GENERATING" && <span className="text-emerald-400 flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Generating voice...</span>}
+              {playbackState === "PLAYING" && <span className="text-emerald-400 flex items-center gap-1"><Sparkles className="w-3 h-3 animate-pulse" /> Speaking...</span>}
+            </div>
           </div>
         </div>
-        <button 
-          onClick={() => setIsOpen(false)}
-          className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setIsMuted(!isMuted)}
+            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+            title={isMuted ? "Unmute Voice" : "Mute Voice"}
+          >
+            {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+          </button>
+          <button 
+            onClick={() => setIsOpen(false)}
+            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {/* Chat History */}
@@ -191,7 +197,16 @@ export function ThreadlineAIAgent() {
                   )}
 
                   {/* The actual text explanation */}
-                  <div>{formatText(msg.text)}</div>
+                  <div className="relative group">
+                    <div>{formatText(msg.text)}</div>
+                    <button
+                      onClick={() => play(msg.text)}
+                      className="absolute -left-10 top-0 p-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-white border border-slate-200 rounded-full text-indigo-500 shadow-sm hover:bg-indigo-50 hover:scale-105"
+                      title="Replay Audio"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                    </button>
+                  </div>
                   
                   {/* Scenario Data Card */}
                   {msg.obj?.type === "scenario" && msg.obj.data && (

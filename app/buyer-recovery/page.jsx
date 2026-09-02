@@ -100,7 +100,7 @@ export default function BuyerRecovery() {
                   Risk <span className="font-bold">{selectedOption.risk}/100</span>
                 </span>
                 <Link
-                  href="/cluster-map"
+                  href={`/cluster-map?focusClusterId=${ctx.originClusterId}&orderId=${ctx.orderId}&factoryId=${ctx.factoryId}&focusReason=ORDER_ORIGIN`}
                   className="ml-auto flex items-center gap-1.5 px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-lg transition-colors shrink-0"
                 >
                   <Map className="h-3.5 w-3.5" />
@@ -285,7 +285,7 @@ export default function BuyerRecovery() {
                 </div>
               </div>
               <Link
-                href="/cluster-map"
+                href={`/cluster-map?focusClusterId=${ctx.originClusterId}&orderId=${ctx.orderId}&factoryId=${ctx.factoryId}&focusReason=ORDER_ORIGIN`}
                 className="flex items-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-xl transition-all shadow-md whitespace-nowrap shrink-0"
               >
                 <Map className="h-4 w-4" />

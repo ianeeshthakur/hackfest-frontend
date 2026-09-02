@@ -29,7 +29,6 @@ export const OWNER_ROUTES = [
   "/investigation",
   "/impact",
   "/recovery",
-  "/cluster-map",
   "/false-diversification",
   "/decisions-audit",
 ];
@@ -51,7 +50,6 @@ export const OWNER_NAV = [
   { id: "nav-inv",        label: "Investigation",        href: "/investigation",        iconName: "Search"          },
   { id: "nav-impact",     label: "Impact & Inventory",   href: "/impact",               iconName: "BarChart2"       },
   { id: "nav-recovery",   label: "Recovery Scenarios",   href: "/recovery",             iconName: "RefreshCcw"      },
-  { id: "nav-map",        label: "Cluster Map",          href: "/cluster-map",          iconName: "Map"             },
   { id: "nav-false-div",  label: "False Diversification",href: "/false-diversification",iconName: "GitMerge"        },
   { id: "nav-audit",      label: "Decisions & Audit",    href: "/decisions-audit",      iconName: "ClipboardList"   },
 ];

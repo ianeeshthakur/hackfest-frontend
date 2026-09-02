@@ -69,6 +69,7 @@ interface ClusterMapProps {
   onSelectFactory: (id: string | null) => void;
   clusterPopupInfo: { cluster: ClusterData; position: { lat: number; lng: number } } | null;
   onSetClusterPopupInfo: (info: { cluster: ClusterData; position: { lat: number; lng: number } } | null) => void;
+  recoveryFactoryId?: string;
 }
 
 // ─── Child: flies the map to a new view when mapView prop changes ─────────────
@@ -144,6 +145,7 @@ export default function ClusterMap({
   onSelectFactory,
   clusterPopupInfo,
   onSetClusterPopupInfo,
+  recoveryFactoryId,
 }: ClusterMapProps) {
   const mapRef = useRef<L.Map | null>(null);
 
@@ -255,12 +257,13 @@ export default function ClusterMap({
         {/* ── Factory markers ─────────────────────────────────────────────── */}
         {filteredFactories.map((factory) => {
           const isSelected = selectedFactoryId === factory.id;
+          const isRecoveryOrigin = recoveryFactoryId === factory.id;
           return (
             <Marker
               key={factory.id}
               position={[factory.latitude, factory.longitude]}
-              icon={createFactoryIcon(factory, isSelected)}
-              zIndexOffset={isSelected ? 1000 : 500}
+              icon={createFactoryIcon(factory, isSelected, isRecoveryOrigin)}
+              zIndexOffset={isSelected || isRecoveryOrigin ? 1000 : 500}
               eventHandlers={{
                 click: (e) => handleFactoryClick(e as { originalEvent?: Event }, factory),
               }}

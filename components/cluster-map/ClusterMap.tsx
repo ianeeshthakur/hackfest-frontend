@@ -15,6 +15,7 @@ import {
   Tooltip,
   useMap,
   useMapEvents,
+  Polyline,
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -70,6 +71,8 @@ interface ClusterMapProps {
   clusterPopupInfo: { cluster: ClusterData; position: { lat: number; lng: number } } | null;
   onSetClusterPopupInfo: (info: { cluster: ClusterData; position: { lat: number; lng: number } } | null) => void;
   recoveryFactoryId?: string;
+  recommendedFactoryId?: string;
+  showConnection?: boolean;
 }
 
 // ─── Child: flies the map to a new view when mapView prop changes ─────────────
@@ -100,6 +103,19 @@ function MapRefCapture({ mapRef }: { mapRef: React.MutableRefObject<L.Map | null
   useEffect(() => {
     mapRef.current = map;
   }, [map, mapRef]);
+  return null;
+}
+
+// ─── Child: adjusts map bounds to fit two points ──────────────────────────────
+
+function MapFitBounds({ points, isActive }: { points: [number, number][], isActive: boolean }) {
+  const map = useMap();
+  useEffect(() => {
+    if (isActive && points.length > 1) {
+      const bounds = L.latLngBounds(points);
+      map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5, maxZoom: 13 });
+    }
+  }, [map, points, isActive]);
   return null;
 }
 
@@ -146,12 +162,16 @@ export default function ClusterMap({
   clusterPopupInfo,
   onSetClusterPopupInfo,
   recoveryFactoryId,
+  recommendedFactoryId,
+  showConnection,
 }: ClusterMapProps) {
   const mapRef = useRef<L.Map | null>(null);
 
   // Derive the selected factory object from id
   const selectedFactory = filteredFactories.find((f) => f.id === selectedFactoryId) ?? null;
-
+  const originFactory = filteredFactories.find((f) => f.id === recoveryFactoryId) ?? null;
+  const recommendedFactory = filteredFactories.find((f) => f.id === recommendedFactoryId) ?? null;
+  
   // Clear selected factory when it is filtered out
   useEffect(() => {
     if (selectedFactoryId && !filteredFactories.find((f) => f.id === selectedFactoryId)) {
@@ -207,6 +227,14 @@ export default function ClusterMap({
         <MapViewController mapView={mapView} />
         <MapRefCapture mapRef={mapRef} />
         <MapClickHandler onMapClick={handleMapClick} />
+        <MapFitBounds 
+          isActive={!!(showConnection && originFactory && recommendedFactory)} 
+          points={
+            originFactory && recommendedFactory 
+              ? [[originFactory.latitude, originFactory.longitude], [recommendedFactory.latitude, recommendedFactory.longitude]] 
+              : []
+          } 
+        />
 
         {/* ── Cluster polygon boundaries ──────────────────────────────────── */}
         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
@@ -258,12 +286,13 @@ export default function ClusterMap({
         {filteredFactories.map((factory) => {
           const isSelected = selectedFactoryId === factory.id;
           const isRecoveryOrigin = recoveryFactoryId === factory.id;
+          const isAiRecommended = recommendedFactoryId === factory.id;
           return (
             <Marker
               key={factory.id}
               position={[factory.latitude, factory.longitude]}
-              icon={createFactoryIcon(factory, isSelected, isRecoveryOrigin)}
-              zIndexOffset={isSelected || isRecoveryOrigin ? 1000 : 500}
+              icon={createFactoryIcon(factory, isSelected, isRecoveryOrigin, isAiRecommended)}
+              zIndexOffset={isSelected || isRecoveryOrigin || isAiRecommended ? 1000 : 500}
               eventHandlers={{
                 click: (e) => handleFactoryClick(e as { originalEvent?: Event }, factory),
               }}
@@ -300,7 +329,47 @@ export default function ClusterMap({
         })}
 
         {/* ── Factory detail popup ────────────────────────────────────────── */}
-        {selectedFactory && (
+        {originFactory && recoveryFactoryId && (
+          <Popup
+            key={`origin-${originFactory.id}`}
+            position={[originFactory.latitude, originFactory.longitude]}
+            closeButton={false}
+            maxWidth={280}
+            offset={[0, -16]}
+            autoPan={false}
+          >
+            <FactoryPopup
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              factory={originFactory as any}
+              onClose={() => {}}
+              onViewFactory={() => onViewFactory(originFactory.id)}
+              onFindAlternatives={() => onFindAlternatives(originFactory.id)}
+              badge="ORDER ORIGIN"
+            />
+          </Popup>
+        )}
+
+        {recommendedFactory && recommendedFactoryId && (
+          <Popup
+            key={`recommended-${recommendedFactory.id}`}
+            position={[recommendedFactory.latitude, recommendedFactory.longitude]}
+            closeButton={false}
+            maxWidth={280}
+            offset={[0, -16]}
+            autoPan={false}
+          >
+            <FactoryPopup
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              factory={recommendedFactory as any}
+              onClose={() => {}}
+              onViewFactory={() => onViewFactory(recommendedFactory.id)}
+              onFindAlternatives={() => onFindAlternatives(recommendedFactory.id)}
+              badge="AI RECOMMENDED"
+            />
+          </Popup>
+        )}
+
+        {selectedFactory && selectedFactory.id !== recoveryFactoryId && selectedFactory.id !== recommendedFactoryId && (
           <Popup
             key={selectedFactory.id}
             position={[selectedFactory.latitude, selectedFactory.longitude]}
@@ -318,6 +387,26 @@ export default function ClusterMap({
               onFindAlternatives={() => onFindAlternatives(selectedFactory.id)}
             />
           </Popup>
+        )}
+
+        {/* ── Animated Connection Line ────────────────────────────────────── */}
+        {showConnection && originFactory && recommendedFactory && (
+          <Polyline 
+            positions={[
+              [originFactory.latitude, originFactory.longitude],
+              [recommendedFactory.latitude, recommendedFactory.longitude]
+            ]}
+            pathOptions={{ 
+              color: '#8b5cf6', 
+              weight: 3,
+              dashArray: '8, 8',
+              className: 'animate-pulse' 
+            }}
+          >
+            <Tooltip permanent direction="center" className="bg-slate-900 text-purple-300 border-purple-500 font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded">
+              AI Recommended Connection
+            </Tooltip>
+          </Polyline>
         )}
 
         {/* ── Cluster summary popup ───────────────────────────────────────── */}

@@ -67,11 +67,11 @@ interface Factory {
   status: string;
 }
 
-export function createFactoryIcon(factory: Factory, isSelected: boolean, isRecoveryOrigin = false): L.DivIcon {
+export function createFactoryIcon(factory: Factory, isSelected: boolean, isRecoveryOrigin = false, isAiRecommended = false): L.DivIcon {
   const colors = STATUS_COLORS[factory.status] ?? STATUS_COLORS.OPERATIONAL;
   const svgPaths = FACTORY_SVG[factory.type] ?? FACTORY_SVG.Spinning;
-  const size = isSelected || isRecoveryOrigin ? 36 : 30;
-  const iconPx = isSelected || isRecoveryOrigin ? 14 : 12;
+  const size = isSelected || isRecoveryOrigin || isAiRecommended ? 36 : 30;
+  const iconPx = isSelected || isRecoveryOrigin || isAiRecommended ? 14 : 12;
 
   let pingRing = factory.status === "DOWN"
     ? `<div style="position:absolute;inset:-4px;border-radius:50%;border:2px solid #dc2626;animation:ping 1.5s ease-in-out infinite;opacity:0.55;pointer-events:none;"></div>`
@@ -79,23 +79,27 @@ export function createFactoryIcon(factory: Factory, isSelected: boolean, isRecov
 
   if (isRecoveryOrigin) {
     pingRing = `<div style="position:absolute;inset:-4px;border-radius:50%;border:2px solid #10b981;animation:ping 2s ease-in-out infinite;opacity:0.6;pointer-events:none;"></div>`;
+  } else if (isAiRecommended) {
+    pingRing = `<div style="position:absolute;inset:-4px;border-radius:50%;border:2px solid #8b5cf6;animation:ping 2s ease-in-out infinite;opacity:0.6;pointer-events:none;"></div>`;
   }
 
-  let shadow = isSelected || isRecoveryOrigin
-    ? `0 0 0 3px ${isRecoveryOrigin ? '#10b981' : colors.border}30, 0 2px 8px rgba(0,0,0,0.2)`
+  const activeColor = isRecoveryOrigin ? '#10b981' : isAiRecommended ? '#8b5cf6' : colors.border;
+  const shadow = isSelected || isRecoveryOrigin || isAiRecommended
+    ? `0 0 0 3px ${activeColor}30, 0 2px 8px rgba(0,0,0,0.2)`
     : "0 1px 5px rgba(0,0,0,0.18)";
 
   const html = `
 <div style="position:relative;width:${size}px;height:${size}px;">
   ${isRecoveryOrigin ? `<div style="position:absolute;top:-22px;left:50%;transform:translateX(-50%);background:#022c22;color:#34d399;font-size:9px;font-weight:bold;padding:2px 6px;border-radius:4px;white-space:nowrap;border:1px solid #059669;box-shadow:0 2px 4px rgba(0,0,0,0.2);z-index:10;pointer-events:none;">ORDER ORIGIN</div>` : ''}
+  ${isAiRecommended ? `<div style="position:absolute;top:-22px;left:50%;transform:translateX(-50%);background:#4c1d95;color:#a78bfa;font-size:9px;font-weight:bold;padding:2px 6px;border-radius:4px;white-space:nowrap;border:1px solid #7c3aed;box-shadow:0 2px 4px rgba(0,0,0,0.2);z-index:10;pointer-events:none;">AI RECOMMENDED</div>` : ''}
   ${pingRing}
   <div style="
     width:${size}px;height:${size}px;border-radius:50%;
-    background:white;border:2px solid ${isRecoveryOrigin ? '#10b981' : colors.border};
+    background:white;border:2px solid ${activeColor};
     box-shadow:${shadow};
     display:flex;align-items:center;justify-content:center;
     position:relative;z-index:1;cursor:pointer;
-    color:${isRecoveryOrigin ? '#10b981' : colors.border};
+    color:${activeColor};
   ">
     <svg width="${iconPx}" height="${iconPx}" viewBox="0 0 16 16" style="overflow:visible;">
       ${svgPaths}

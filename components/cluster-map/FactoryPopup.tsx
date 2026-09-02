@@ -18,14 +18,24 @@ interface Props {
   onClose: () => void;
   onViewFactory: () => void;
   onFindAlternatives: () => void;
+  badge?: "ORDER ORIGIN" | "AI RECOMMENDED";
 }
 
-export function FactoryPopup({ factory, onClose, onViewFactory, onFindAlternatives }: Props) {
+export function FactoryPopup({ factory, onClose, onViewFactory, onFindAlternatives, badge }: Props) {
   const status = STATUS_CONFIG[factory.status as StatusKey] ?? STATUS_CONFIG.OPERATIONAL;
   const cluster = (clusters as Cluster[]).find((c) => c.id === factory.clusterId);
 
   return (
-    <div className="font-body" style={{ minWidth: 240 }}>
+    <div className="font-body transition-all duration-300" style={{ minWidth: badge ? 280 : 240 }}>
+      {badge && (
+        <div className={`mb-3 px-2 py-1 flex items-center justify-center text-[10px] font-bold tracking-widest uppercase rounded-sm ${
+          badge === "ORDER ORIGIN" 
+            ? "bg-slate-900 text-emerald-400" 
+            : "bg-emerald-500 text-white"
+        }`}>
+          {badge}
+        </div>
+      )}
       <div className="flex items-start justify-between mb-3">
         <div>
           <span className="text-[10px] font-mono text-slate-400 tracking-wide uppercase">

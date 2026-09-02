@@ -3,7 +3,7 @@ import { Mic, MicOff, Square, Activity, Send, Volume2, Minus, ChevronUp } from "
 import { parseIntent, updateContext } from "@/lib/voiceCommands";
 import { useAudioPlayer } from "@/lib/voice/useAudioPlayer";
 
-export function NetworkCopilot({ onIntentAction }) {
+export function NetworkCopilot({ onIntentAction, externalState, externalText, voiceEnabled = true, onToggleVoice }) {
   const [state, setState] = useState("IDLE"); // IDLE, LISTENING, PROCESSING, RESPONDING, ERROR
   const [transcript, setTranscript] = useState("");
   const [responseText, setResponseText] = useState("");
@@ -135,6 +135,9 @@ export function NetworkCopilot({ onIntentAction }) {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
             </span>
           )}
+          <button onClick={onToggleVoice} className={`p-1.5 rounded hover:bg-slate-700 transition-colors ${voiceEnabled ? 'text-emerald-400' : 'text-slate-500'}`} title={voiceEnabled ? "Mute Voice" : "Enable Voice"}>
+            {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <Volume2 className="h-4 w-4 opacity-50 relative after:content-[''] after:absolute after:-top-1 after:-right-1 after:w-full after:h-0.5 after:bg-current after:rotate-45" />}
+          </button>
           <button className="text-slate-400 hover:text-white transition-colors focus:outline-none">
             {isMinimized ? <ChevronUp className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
           </button>
@@ -145,13 +148,13 @@ export function NetworkCopilot({ onIntentAction }) {
       {!isMinimized && (
         <>
           <div className="p-4 min-h-[120px] max-h-[250px] overflow-y-auto flex flex-col justify-center">
-        {state === "IDLE" && (
+        {(externalState || state) === "IDLE" && (
           <div className="text-center text-slate-500 text-sm">
             Ask about your supply network
           </div>
         )}
 
-        {state === "LISTENING" && (
+        {(externalState || state) === "LISTENING" && (
           <div className="flex flex-col items-center">
             <div className="text-slate-400 text-xs uppercase tracking-wider mb-2 font-semibold">Listening...</div>
             <div className="text-slate-800 text-center font-medium italic">
@@ -160,7 +163,7 @@ export function NetworkCopilot({ onIntentAction }) {
           </div>
         )}
 
-        {state === "PROCESSING" && (
+        {(externalState || state) === "PROCESSING" && (
           <div className="flex flex-col items-center">
             <div className="text-slate-400 text-xs uppercase tracking-wider mb-2 font-semibold">Analyzing...</div>
             <div className="flex space-x-1">
@@ -171,21 +174,21 @@ export function NetworkCopilot({ onIntentAction }) {
           </div>
         )}
 
-        {state === "RESPONDING" && (
+        {(externalState || state) === "RESPONDING" && (
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5 mb-2 text-emerald-600">
               <Volume2 className="h-3 w-3 animate-pulse" />
               <span className="text-[10px] uppercase font-bold tracking-wider">Speaking</span>
             </div>
             <div className="text-sm text-slate-800 leading-relaxed font-medium">
-              "{responseText}"
+              "{externalText || responseText}"
             </div>
           </div>
         )}
 
-        {state === "ERROR" && (
+        {(externalState || state) === "ERROR" && (
           <div className="text-red-600 text-sm text-center">
-            {responseText}
+            {externalText || responseText}
           </div>
         )}
       </div>

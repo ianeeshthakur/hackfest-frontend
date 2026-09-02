@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/command-center/Sidebar";
@@ -15,6 +15,7 @@ import { factories, clusters, INDIA_VIEW } from "@/lib/clusterData";
 import { updateContext } from "@/lib/voiceCommands";
 import { useRole } from "@/lib/roleContext";
 import type { FilterState } from "@/components/cluster-map/types";
+import { Volume2, VolumeX, RotateCcw } from "lucide-react";
 
 // Dynamically import the map (Leaflet requires browser APIs, SSR disabled)
 const ClusterMap = dynamic(
@@ -30,6 +31,32 @@ const ClusterMap = dynamic(
 );
 
 const INDIA = { longitude: INDIA_VIEW.longitude, latitude: INDIA_VIEW.latitude, zoom: INDIA_VIEW.zoom };
+
+// --- AI Helpers ---
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getMostRelevantFactory = (sourceFactory: any, allFactories: any[]) => {
+  if (!sourceFactory) return null;
+  // Exclude source, prioritize same cluster, same type, operational, then capacity
+  const candidates = allFactories.filter(
+    (f) => f.id !== sourceFactory.id && f.status === "OPERATIONAL"
+  );
+  if (candidates.length === 0) return null;
+
+  candidates.sort((a, b) => {
+    let scoreA = 0;
+    let scoreB = 0;
+    if (a.clusterId === sourceFactory.clusterId) scoreA += 100;
+    if (b.clusterId === sourceFactory.clusterId) scoreB += 100;
+    if (a.type === sourceFactory.type) scoreA += 50;
+    if (b.type === sourceFactory.type) scoreB += 50;
+    scoreA += a.capacity;
+    scoreB += b.capacity;
+    return scoreB - scoreA; // Descending
+  });
+
+  return candidates[0];
+};
 
 export default function ClusterMapPage() {
   const router = useRouter();
@@ -57,6 +84,34 @@ export default function ClusterMapPage() {
   // Recovery Flow State
   const [isRecoveryFocus, setIsRecoveryFocus] = useState(false);
   const [recoveryOrder, setRecoveryOrder] = useState<{ id: string, factoryId: string, clusterId: string } | null>(null);
+
+  // Cinematic AI State
+  const [aiPhase, setAiPhase] = useState<"idle" | "locating" | "source-found" | "analyzing" | "alternative-found" | "connecting" | "complete">("idle");
+  const [recommendedFactoryId, setRecommendedFactoryId] = useState<string | null>(null);
+  const [showConnection, setShowConnection] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [aiText, setAiText] = useState("");
+  const aiSequenceRef = useRef<NodeJS.Timeout | null>(null);
+
+  const stopSequence = useCallback(() => {
+    if (aiSequenceRef.current) clearTimeout(aiSequenceRef.current);
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+  }, []);
+
+  const speakAI = useCallback((text: string) => {
+    setAiText(text);
+    if (!voiceEnabled || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    window.speechSynthesis.speak(utterance);
+  }, [voiceEnabled]);
+
+  useEffect(() => {
+    return stopSequence;
+  }, [stopSequence]);
 
   const activeFactory = useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -94,6 +149,63 @@ export default function ClusterMapPage() {
     setIsRecoveryFocus(false);
   }, []);
 
+  const runAiSequence = useCallback((orderId: string, factoryId: string, clusterId: string) => {
+    stopSequence();
+    handleClusterSelect(clusterId);
+    setIsRecoveryFocus(true);
+    setRecoveryOrder({ id: orderId, factoryId, clusterId });
+    setRecommendedFactoryId(null);
+    setShowConnection(false);
+    setSelectedFactoryId(null);
+    
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const originFactory = (factories as any[]).find(f => f.id === factoryId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const recommended = originFactory ? getMostRelevantFactory(originFactory, factories as any[]) : null;
+
+    // Phase 2: Order Detected (after 1s)
+    aiSequenceRef.current = setTimeout(() => {
+      setAiPhase("locating");
+      speakAI(`Order ${orderId} detected. Locating the source factory.`);
+      
+      aiSequenceRef.current = setTimeout(() => {
+        setAiPhase("source-found");
+        speakAI(`Order origin identified: ${originFactory?.name || "Factory"}, ${factoryId}.`);
+        
+        // Phase 3: Analyzing (after 2.5s)
+        aiSequenceRef.current = setTimeout(() => {
+          setAiPhase("analyzing");
+          speakAI(`Analyzing the supply network for the most relevant available factory.`);
+          
+          // Phase 4: Alternative Found (after 3.5s)
+          aiSequenceRef.current = setTimeout(() => {
+            if (recommended) {
+              setAiPhase("alternative-found");
+              setRecommendedFactoryId(recommended.id);
+              speakAI(`Relevant factory identified. ${recommended.name} is the strongest available alternative.`);
+              
+              // Phase 5: Connecting (after 3s)
+              aiSequenceRef.current = setTimeout(() => {
+                setAiPhase("connecting");
+                setShowConnection(true);
+                speakAI(`Network relationship established. This factory can support recovery if the original factory becomes unavailable.`);
+                
+                // Phase 6: Complete (after 4s)
+                aiSequenceRef.current = setTimeout(() => {
+                  setAiPhase("complete");
+                  speakAI(`Recovery alternative ready for review.`);
+                }, 4000);
+              }, 4000);
+            } else {
+              setAiPhase("complete");
+              speakAI(`No relevant alternatives found in the network.`);
+            }
+          }, 3500);
+        }, 3000);
+      }, 2500);
+    }, 1000);
+  }, [handleClusterSelect, speakAI, stopSequence]);
+
   // Handle URL Params for Recovery Flow Focus
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -102,21 +214,12 @@ export default function ClusterMapPage() {
     const orderId = params.get('orderId');
     const factoryId = params.get('factoryId');
 
-    if (focusReason === 'ORDER_ORIGIN' && focusClusterId) {
+    if (focusReason === 'ORDER_ORIGIN' && focusClusterId && orderId && factoryId) {
       setTimeout(() => {
-        handleClusterSelect(focusClusterId);
-        setIsRecoveryFocus(true);
-        if (orderId && factoryId) {
-          setRecoveryOrder({ id: orderId, factoryId, clusterId: focusClusterId });
-          // Note: The factory highlighting logic will be handled inside ClusterMap or by setting selectedFactoryId
-          // Delaying selectedFactoryId slightly so map flyTo happens first
-          setTimeout(() => {
-             setSelectedFactoryId(factoryId);
-          }, 1400); // Wait for the 1.2s map flyTo animation to finish
-        }
+        runAiSequence(orderId, factoryId, focusClusterId);
       }, 300);
     }
-  }, [handleClusterSelect]);
+  }, [runAiSequence]);
 
   const handleVoiceIntent = useCallback((result: { intent: string; payload: any }) => {
     const { intent, payload } = result;
@@ -181,15 +284,27 @@ export default function ClusterMapPage() {
                 </div>
               </div>
             </div>
-            <button 
-              onClick={() => {
-                handleReset();
-                router.replace('/cluster-map');
-              }}
-              className="px-4 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-lg transition-colors border border-white/10"
-            >
-              View All Clusters
-            </button>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => {
+                  if (recoveryOrder) {
+                    runAiSequence(recoveryOrder.id, recoveryOrder.factoryId, recoveryOrder.clusterId);
+                  }
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 text-xs font-bold rounded-lg transition-colors border border-emerald-500/20"
+              >
+                <RotateCcw className="w-3.5 h-3.5" /> Replay AI Analysis
+              </button>
+              <button 
+                onClick={() => {
+                  handleReset();
+                  router.replace('/cluster-map');
+                }}
+                className="px-4 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-lg transition-colors border border-white/10"
+              >
+                View All Clusters
+              </button>
+            </div>
           </div>
         )}
 
@@ -220,7 +335,9 @@ export default function ClusterMapPage() {
               onViewFactory={(id) => { setActiveFactoryId(id); setActiveModal('details'); }}
               onFindAlternatives={(id) => { setActiveFactoryId(id); setActiveModal('alternatives'); }}
               selectedFactoryId={selectedFactoryId}
-              recoveryFactoryId={recoveryOrder?.factoryId}
+              recoveryFactoryId={aiPhase !== "idle" && aiPhase !== "locating" ? recoveryOrder?.factoryId : undefined}
+              recommendedFactoryId={recommendedFactoryId || undefined}
+              showConnection={showConnection}
               onSelectFactory={(id) => {
                 setSelectedFactoryId(id);
                 if (id) updateContext("lastFactoryId", id);
@@ -261,7 +378,22 @@ export default function ClusterMapPage() {
           </div>
 
           {/* Floating AI Assistant (shifted right to avoid map clusters) */}
-          <NetworkCopilot onIntentAction={handleVoiceIntent} />
+          <NetworkCopilot 
+            onIntentAction={handleVoiceIntent} 
+            externalState={
+              aiPhase === "analyzing" || aiPhase === "locating" ? "PROCESSING" :
+              aiPhase === "complete" || aiPhase === "idle" ? "IDLE" : 
+              "RESPONDING"
+            }
+            externalText={aiText}
+            voiceEnabled={voiceEnabled}
+            onToggleVoice={() => {
+              setVoiceEnabled(prev => {
+                if (prev) window.speechSynthesis?.cancel();
+                return !prev;
+              });
+            }}
+          />
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Mic, MicOff, Square, Activity, Send, Volume2 } from "lucide-react";
+import { Mic, MicOff, Square, Activity, Send, Volume2, Minus, ChevronUp } from "lucide-react";
 import { parseIntent, updateContext } from "@/lib/voiceCommands";
 
 export function NetworkCopilot({ onIntentAction }) {
@@ -7,6 +7,7 @@ export function NetworkCopilot({ onIntentAction }) {
   const [transcript, setTranscript] = useState("");
   const [responseText, setResponseText] = useState("");
   const [textInput, setTextInput] = useState("");
+  const [isMinimized, setIsMinimized] = useState(false);
   
   const recognitionRef = useRef(null);
   const synthRef = useRef(null);
@@ -114,24 +115,34 @@ export function NetworkCopilot({ onIntentAction }) {
   };
 
   return (
-    <div className="absolute bottom-8 right-8 z-[2000] w-80 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden font-body flex flex-col transition-all duration-300">
+    <div className={`absolute bottom-8 right-8 z-[2000] w-80 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden font-body flex flex-col transition-all duration-300 ${isMinimized ? "h-auto" : "h-auto"}`}>
       
       {/* Header */}
-      <div className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between">
+      <div 
+        className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between cursor-pointer"
+        onClick={() => setIsMinimized(!isMinimized)}
+      >
         <div className="flex items-center gap-2">
           <Activity className="h-4 w-4 text-emerald-400" />
           <span className="font-semibold text-sm">Network Copilot</span>
         </div>
-        {state === "LISTENING" && (
-          <span className="flex h-2 w-2 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-          </span>
-        )}
+        <div className="flex items-center gap-3">
+          {state === "LISTENING" && (
+            <span className="flex h-2 w-2 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+            </span>
+          )}
+          <button className="text-slate-400 hover:text-white transition-colors focus:outline-none">
+            {isMinimized ? <ChevronUp className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="p-4 min-h-[120px] max-h-[250px] overflow-y-auto flex flex-col justify-center">
+      {!isMinimized && (
+        <>
+          <div className="p-4 min-h-[120px] max-h-[250px] overflow-y-auto flex flex-col justify-center">
         {state === "IDLE" && (
           <div className="text-center text-slate-500 text-sm">
             Ask about your supply network
@@ -211,6 +222,8 @@ export function NetworkCopilot({ onIntentAction }) {
           </button>
         </form>
       </div>
+      </>
+      )}
 
     </div>
   );

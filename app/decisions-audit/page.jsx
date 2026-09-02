@@ -9,6 +9,7 @@ import {
   Minus, CheckCircle2, AlertCircle, Clock3, Zap,
   Activity, User, Bot, Settings2, ChevronDown, ChevronUp,
 } from "lucide-react";
+import { AuditAnimationFactory } from "@/components/audit/AuditAnimations";
 
 // ─── Actor config ─────────────────────────────────────────────────────────────
 const ACTOR_META = {
@@ -146,15 +147,20 @@ function AuditEntry({ entry, index, isLast }) {
           {/* Expanded detail */}
           {expanded && (
             <div style={{
-              padding: "0 14px 14px",
+              padding: "14px",
               borderTop: "1px solid rgba(255,255,255,0.05)",
-              display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10,
             }}>
-              {/* Reason */}
-              <div style={{ gridColumn: "1 / -1", marginTop: 12 }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: "#475569", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>Reason</div>
-                <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>{entry.reason || "—"}</div>
-              </div>
+              {/* Animation container */}
+              <AuditAnimationFactory eventType={entry.eventType} />
+
+              <div style={{
+                display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10,
+              }}>
+                {/* Reason */}
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: "#475569", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>Reason</div>
+                  <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>{entry.reason || "—"}</div>
+                </div>
 
               {/* Risk Before */}
               <div>
@@ -176,6 +182,7 @@ function AuditEntry({ entry, index, isLast }) {
               <div>
                 <div style={{ fontSize: 9, fontWeight: 700, color: "#475569", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>Delta</div>
                 <RiskDelta before={entry.riskBefore} after={entry.riskAfter} />
+              </div>
               </div>
             </div>
           )}

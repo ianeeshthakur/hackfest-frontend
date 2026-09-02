@@ -58,8 +58,15 @@ export function ThreadlineAIAgent() {
 
     // Simulate network delay
     setTimeout(() => {
-      const responseText = generateAIResponse(text, pathname, role, disruptionContext);
-      const aiMsg = { id: Date.now() + 1, sender: "ai", text: responseText };
+      const response = generateAIResponse(text, pathname, role, disruptionContext);
+      let aiMsg;
+      
+      if (typeof response === "string") {
+        aiMsg = { id: Date.now() + 1, sender: "ai", text: response };
+      } else {
+        // It's a structured object from the new engine
+        aiMsg = { id: Date.now() + 1, sender: "ai", text: response.text, obj: response };
+      }
       
       setMessages((prev) => [...prev, aiMsg]);
       setIsTyping(false);
@@ -116,7 +123,7 @@ export function ThreadlineAIAgent() {
             <Sparkles className="w-4 h-4 text-white" />
             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-slate-900"></span>
           </div>
-          <div className="flex flex-col">
+        <div className="flex flex-col">
             <span className="text-sm font-bold tracking-wide flex items-center gap-2">
               ThreadLine AI
               <span className="text-[9px] px-1.5 py-0.5 rounded-sm bg-slate-800 text-slate-300 uppercase tracking-widest border border-slate-700">
@@ -154,7 +161,132 @@ export function ThreadlineAIAgent() {
                 ? "bg-slate-800 text-white rounded-br-none" 
                 : "bg-white border border-slate-200 text-slate-700 rounded-bl-none"
             }`}>
-              {msg.sender === "ai" ? formatText(msg.text) : msg.text}
+              
+              {msg.sender === "user" ? (
+                msg.text
+              ) : (
+                <div className="space-y-3">
+                  
+                  {/* Scenario Headers */}
+                  {(msg.obj?.type === "scenario" || msg.obj?.type === "comparison") && (
+                     <div className="border-b border-indigo-100 pb-2 mb-2">
+                       <span className="text-[10px] font-bold text-indigo-600 tracking-widest uppercase">
+                         AI SCENARIO ANALYSIS
+                       </span>
+                       <div className="text-[9px] text-slate-400">Powered by ThreadLine Scenario Engine</div>
+                     </div>
+                  )}
+
+                  {/* The actual text explanation */}
+                  <div>{formatText(msg.text)}</div>
+                  
+                  {/* Scenario Data Card */}
+                  {msg.obj?.type === "scenario" && msg.obj.data && (
+                    <div className="mt-3 bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-sm">
+                       <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 border-b border-slate-200 pb-1">
+                         Projected Impact
+                       </div>
+                       
+                       <div className="grid grid-cols-2 gap-y-2 gap-x-4 mb-3">
+                         <div className="flex flex-col">
+                           <span className="text-[10px] text-slate-500">Risk Score</span>
+                           <span className="text-[12px] font-bold text-slate-900">{msg.obj.data.current.risk} → <span className="text-red-500">{msg.obj.data.projected.risk}</span></span>
+                         </div>
+                         <div className="flex flex-col">
+                           <span className="text-[10px] text-slate-500">Expected Delay</span>
+                           <span className="text-[12px] font-bold text-red-500">+{msg.obj.data.projected.delay}h</span>
+                         </div>
+                         <div className="flex flex-col">
+                           <span className="text-[10px] text-slate-500">Capacity</span>
+                           <span className="text-[12px] font-bold text-slate-900">{msg.obj.data.current.capacityPct}% → <span className="text-amber-500">{msg.obj.data.projected.capacityPct}%</span></span>
+                         </div>
+                         <div className="flex flex-col">
+                           <span className="text-[10px] text-slate-500">Orders at Risk</span>
+                           <span className="text-[12px] font-bold text-slate-900">{msg.obj.data.current.ordersAtRisk} → <span className="text-red-500">{msg.obj.data.projected.ordersAtRisk}</span></span>
+                         </div>
+                       </div>
+
+                       <div className="border-t border-slate-200 pt-2 flex justify-between items-center">
+                         <div className="flex flex-col">
+                           <span className="text-[10px] text-slate-500">Recommended</span>
+                           <span className="text-[11px] font-bold text-emerald-600">{msg.obj.data.projected.recommendedAction}</span>
+                         </div>
+                         <div className="flex flex-col items-end">
+                           <span className="text-[10px] text-slate-500">Confidence</span>
+                           <span className="text-[11px] font-bold text-indigo-600">{msg.obj.data.projected.confidence}%</span>
+                         </div>
+                       </div>
+                       
+                       {/* Assumptions Toggle */}
+                       <div className="mt-3 bg-white p-2 rounded border border-slate-100">
+                         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Scenario Assumptions</span>
+                         <ul className="text-[10px] text-slate-500 space-y-0.5 leading-tight">
+                           {msg.obj.data.assumptions.map((a, idx) => (
+                             <li key={idx} className="flex items-start gap-1"><span className="text-indigo-400">•</span> {a}</li>
+                           ))}
+                         </ul>
+                       </div>
+                    </div>
+                  )}
+
+                  {/* Comparison Data Card */}
+                  {msg.obj?.type === "comparison" && msg.obj.data?.comparisons && (
+                    <div className="mt-3 bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-sm">
+                       <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 border-b border-slate-200 pb-1">
+                         Scenario Comparison
+                       </div>
+                       
+                       <div className="w-full">
+                         {/* Header row */}
+                         <div className="grid grid-cols-5 gap-2 text-[10px] text-slate-500 font-bold mb-2 pb-1 border-b border-slate-200">
+                           <div className="col-span-1">Action</div>
+                           <div className="text-center">Risk</div>
+                           <div className="text-center">Delay</div>
+                           <div className="text-center">Cost</div>
+                           <div className="text-center">Conf.</div>
+                         </div>
+                         
+                         {/* Rows */}
+                         {msg.obj.data.comparisons.map((comp, idx) => (
+                           <div key={idx} className="grid grid-cols-5 gap-2 text-[11px] mb-2 items-center">
+                             <div className="col-span-1 font-bold text-slate-700">{comp.name}</div>
+                             <div className="text-center font-bold text-slate-900">{comp.risk}</div>
+                             <div className="text-center font-bold text-red-500">+{comp.delay}h</div>
+                             <div className="text-center font-bold text-slate-600">{comp.cost === 0 ? "₹0" : `+₹${(comp.cost/1000).toFixed(1)}k`}</div>
+                             <div className="text-center font-bold text-indigo-600">{comp.confidence}%</div>
+                           </div>
+                         ))}
+                       </div>
+                       
+                       {/* Assumptions Toggle */}
+                       <div className="mt-3 bg-white p-2 rounded border border-slate-100">
+                         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Scenario Assumptions</span>
+                         <ul className="text-[10px] text-slate-500 space-y-0.5 leading-tight">
+                           {msg.obj.data.assumptions.map((a, idx) => (
+                             <li key={idx} className="flex items-start gap-1"><span className="text-indigo-400">•</span> {a}</li>
+                           ))}
+                         </ul>
+                       </div>
+                    </div>
+                  )}
+
+                  {/* Follow ups rendered inside the message bubble at the bottom */}
+                  {msg.obj?.followUps && msg.obj.followUps.length > 0 && (
+                     <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-2">
+                       {msg.obj.followUps.map((q, i) => (
+                         <button
+                           key={i}
+                           onClick={() => handleSend(q)}
+                           className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 px-2 py-1 rounded-md transition-colors text-left"
+                         >
+                           {q}
+                         </button>
+                       ))}
+                     </div>
+                  )}
+
+                </div>
+              )}
             </div>
 
             {msg.sender === "user" && (

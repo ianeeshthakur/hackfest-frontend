@@ -50,7 +50,7 @@ export function Sidebar() {
   const navItems = getActiveNav(role) as Array<{ id: string, label: string, href: string, iconName: string, badge?: string }>;
 
   const hasActiveDisruption = currentConfig && simulationState !== "IDLE";
-  const isHighSeverity = currentConfig?.severity?.includes("HIGH") || currentConfig?.severity === "CRITICAL";
+  const isHighSeverity = (currentConfig as any)?.severity?.includes("HIGH") || (currentConfig as any)?.severity === "CRITICAL";
 
   return (
     <aside className="flex h-screen w-[220px] flex-shrink-0 flex-col border-r border-slate-200 bg-white">

@@ -24,6 +24,7 @@ import React, { createContext, useContext, useState } from "react";
 export const OWNER_ROUTES = [
   "/command-center",
   "/factory-owner",
+  "/my-network",
   "/global-logistics",
   "/investigation",
   "/impact",
@@ -45,6 +46,7 @@ export const BUYER_ROUTES = [
 export const OWNER_NAV = [
   { id: "nav-cc",         label: "Command Center",       href: "/command-center",       iconName: "LayoutDashboard" },
   { id: "nav-factory",    label: "Factory Dashboard",    href: "/factory-owner",        iconName: "Factory"         },
+  { id: "nav-network",    label: "My Network",           href: "/my-network",           iconName: "Network"         },
   { id: "nav-logistics",  label: "Global Logistics",     href: "/global-logistics",     iconName: "Network"         },
   { id: "nav-inv",        label: "Investigation",        href: "/investigation",        iconName: "Search"          },
   { id: "nav-impact",     label: "Impact & Inventory",   href: "/impact",               iconName: "BarChart2"       },

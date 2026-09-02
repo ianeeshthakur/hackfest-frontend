@@ -4,6 +4,7 @@ import { AuditProvider } from "@/lib/auditContext";
 import { RoleProvider } from "@/lib/roleContext";
 import { RoleSwitcher } from "@/components/ui/RoleSwitcher";
 import { DisruptionProvider } from "@/lib/disruptionContext";
+import { ThreadlineAIAgent } from "@/components/ai/ThreadlineAIAgent";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -49,6 +50,7 @@ export default function RootLayout({
             <DisruptionProvider>
               {children}
               <RoleSwitcher />
+              <ThreadlineAIAgent />
             </DisruptionProvider>
           </AuditProvider>
         </RoleProvider>

@@ -36,6 +36,7 @@ export const OWNER_ROUTES = [
 export const BUYER_ROUTES = [
   "/buyer",
   "/buyer-recovery",
+  "/buyer-decision",
   "/impact",
   "/cluster-map",
 ];
@@ -58,7 +59,7 @@ export const BUYER_NAV = [
   { id: "nav-b-orders",   label: "My Orders",            href: "/buyer",                iconName: "ShoppingBag"     },
   { id: "nav-b-impact",   label: "Impact & Inventory",   href: "/impact",               iconName: "BarChart2"       },
   { id: "nav-b-recovery", label: "Recovery Options",     href: "/buyer-recovery",       iconName: "RefreshCcw"      },
-  { id: "nav-b-decision", label: "Decision Center",      href: "/buyer-recovery",       iconName: "ClipboardList"   },
+  { id: "nav-b-decision", label: "Decision Center",      href: "/buyer-decision",       iconName: "ClipboardList"   },
   { id: "nav-b-map",      label: "Cluster Map",          href: "/cluster-map",          iconName: "Map"             },
 ];
 

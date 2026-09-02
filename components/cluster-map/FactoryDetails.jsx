@@ -1,7 +1,10 @@
 import React from 'react';
-import { X, Activity, Battery, Package, AlertTriangle, Clock } from 'lucide-react';
+import { X, Activity, Battery, Package, AlertTriangle, Clock, ShieldCheck, TrendingUp, MapPin } from 'lucide-react';
+import { useRole } from '@/lib/roleContext';
 
 export function FactoryDetails({ factory, onClose }) {
+  const { role } = useRole();
+  const isBuyer = role === "buyer";
   if (!factory) return null;
   const isDown = factory.status === 'DOWN';
 
@@ -18,39 +21,79 @@ export function FactoryDetails({ factory, onClose }) {
       </div>
 
       <div className="p-4 space-y-4 font-body">
-        <div className="flex items-center gap-2">
-          <span className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wide ${isDown ? 'bg-red-50 text-red-600' : factory.status === 'WARNING' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
-            {factory.status}
-          </span>
-          {isDown && <span className="text-[12px] text-red-600 font-medium truncate" title={factory.disruption}>{factory.disruption}</span>}
-        </div>
+        {isBuyer ? (
+          <>
+            <div className="flex items-center gap-2 mb-2">
+              <span className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wide ${isDown ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                {isDown ? "DELAYED" : "ON TRACK"}
+              </span>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <DetailBlock label="Available Capacity" value={`${factory.capacity.toLocaleString()} units`} />
+              <DetailBlock label="Business Risk" value={factory.status === 'DOWN' ? 'High' : 'Low'} highlight={isDown ? 'text-red-600' : 'text-emerald-600'} icon={AlertTriangle} />
+              <DetailBlock label="Certification" value="ISO 9001, GOTS" icon={ShieldCheck} />
+              <DetailBlock label="Track Record" value="94% On-Time" icon={TrendingUp} />
+            </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <DetailBlock label="Capacity" value={`${factory.capacity.toLocaleString()} units/day`} />
-          <DetailBlock label="Current Load" value={`${factory.currentLoad}%`} />
-          <DetailBlock label="Power" value={isDown ? 'Offline' : 'Online'} highlight={isDown ? 'text-red-600' : 'text-emerald-600'} icon={Battery} />
-          <DetailBlock label={isDown ? 'Orders Affected' : 'Active Orders'} value={factory.orders} highlight={isDown ? 'text-red-600' : ''} icon={Package} />
-        </div>
+            <div className="pt-3 border-t border-slate-100 grid grid-cols-2 gap-4">
+              <DetailBlock label="Region" value={`${factory.clusterId.charAt(0).toUpperCase() + factory.clusterId.slice(1)}`} icon={MapPin} />
+              <DetailBlock label="Price Impact" value="Standard" />
+            </div>
 
-        <div className="pt-3 border-t border-slate-100 grid grid-cols-2 gap-4">
-          <DetailBlock label="Current Production" value={isDown ? '0/day' : `${Math.floor((factory.capacity * factory.currentLoad) / 100).toLocaleString()}/day`} icon={Activity} />
-          <DetailBlock label="Utilization" value={isDown ? '0%' : `${factory.currentLoad}%`} />
-        </div>
-
-        {isDown && (
-          <div className="pt-3 border-t border-slate-100 bg-red-50/50 p-3 rounded-lg border border-red-100">
-            <div className="flex items-start gap-2 text-red-600">
-              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              <div>
-                <div className="text-[12px] font-bold mb-1">Recovery Status</div>
-                <div className="text-[11px] mb-2">Maintenance team dispatched. Issue identified in primary processing unit.</div>
-                <div className="flex items-center gap-1.5 text-[11px] font-semibold bg-white px-2 py-1 rounded inline-flex border border-red-100 shadow-sm">
-                  <Clock className="w-3 h-3" />
-                  Est. Recovery: 6 hours
+            {isDown && (
+              <div className="pt-3 border-t border-slate-100 bg-amber-50/50 p-3 rounded-lg border border-amber-100">
+                <div className="flex items-start gap-2 text-amber-700">
+                  <Clock className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <div className="text-[12px] font-bold mb-1">Production Delay Expected</div>
+                    <div className="text-[11px] mb-2">A supply chain delay is impacting fulfillment from this location.</div>
+                    <div className="flex items-center gap-1.5 text-[11px] font-semibold bg-white px-2 py-1 rounded inline-flex border border-amber-100 shadow-sm">
+                      <Activity className="w-3 h-3" />
+                      Recovery options available
+                    </div>
+                  </div>
                 </div>
               </div>
+            )}
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-2">
+              <span className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wide ${isDown ? 'bg-red-50 text-red-600' : factory.status === 'WARNING' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                {factory.status}
+              </span>
+              {isDown && <span className="text-[12px] text-red-600 font-medium truncate" title={factory.disruption}>{factory.disruption}</span>}
             </div>
-          </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <DetailBlock label="Capacity" value={`${factory.capacity.toLocaleString()} units/day`} />
+              <DetailBlock label="Current Load" value={`${factory.currentLoad}%`} />
+              <DetailBlock label="Power" value={isDown ? 'Offline' : 'Online'} highlight={isDown ? 'text-red-600' : 'text-emerald-600'} icon={Battery} />
+              <DetailBlock label={isDown ? 'Orders Affected' : 'Active Orders'} value={factory.orders} highlight={isDown ? 'text-red-600' : ''} icon={Package} />
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 grid grid-cols-2 gap-4">
+              <DetailBlock label="Current Production" value={isDown ? '0/day' : `${Math.floor((factory.capacity * factory.currentLoad) / 100).toLocaleString()}/day`} icon={Activity} />
+              <DetailBlock label="Utilization" value={isDown ? '0%' : `${factory.currentLoad}%`} />
+            </div>
+
+            {isDown && (
+              <div className="pt-3 border-t border-slate-100 bg-red-50/50 p-3 rounded-lg border border-red-100">
+                <div className="flex items-start gap-2 text-red-600">
+                  <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <div className="text-[12px] font-bold mb-1">Recovery Status</div>
+                    <div className="text-[11px] mb-2">Maintenance team dispatched. Issue identified in primary processing unit.</div>
+                    <div className="flex items-center gap-1.5 text-[11px] font-semibold bg-white px-2 py-1 rounded inline-flex border border-red-100 shadow-sm">
+                      <Clock className="w-3 h-3" />
+                      Est. Recovery: 6 hours
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
       

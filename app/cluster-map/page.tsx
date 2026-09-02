@@ -59,10 +59,8 @@ export default function ClusterMapPage() {
 
   const filteredFactories = useMemo(() => {
     return (factories as any[]).filter((f) => {
-      // Buyer only sees the disrupted factory and alternate factories (SuppA-T02, etc.)
-      if (isBuyer) {
-        if (!["F-003", "F-013", "F-016", "F-020"].includes(f.id)) return false;
-      }
+      // Removed hardcoded buyer filter so all factories are returned.
+      // The buyer view restriction should happen at the inspector/popup level.
       
       const clusterMatch = filters.cluster === "all" || f.clusterId === filters.cluster;
       const typeMatch    = filters.type === "all"    || f.type === filters.type;

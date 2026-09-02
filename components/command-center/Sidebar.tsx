@@ -44,7 +44,7 @@ const iconMap: Record<string, React.ElementType> = {
 export function Sidebar() {
   const pathname = usePathname();
   const { role } = useRole();
-  const navItems = getActiveNav(role);
+  const navItems = getActiveNav(role) as Array<{ id: string, label: string, href: string, iconName: string, badge?: string }>;
 
   return (
     <aside className="flex h-screen w-[220px] flex-shrink-0 flex-col border-r border-slate-200 bg-white">

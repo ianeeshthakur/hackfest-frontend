@@ -7,105 +7,76 @@ import { useDisruption } from "@/lib/disruptionContext";
 import { Activity, Zap, Users, Factory, Package, AlertTriangle, Play, ShieldAlert } from "lucide-react";
 import { ExplainableRiskScore } from "@/components/ui/ExplainableRiskScore";
 import { RoleGuard } from "@/components/ui/RoleGuard";
+import { AIResponsePipeline } from "@/components/command-center/AIResponsePipeline";
 
 export default function FactoryOwnerDashboard() {
-  // Hardcoded to F-013 (Tiruppur Cotton Spinning Mill) to act as "Suresh Textiles"
   const TARGET_FACTORY_ID = "F-013";
   
   const [factoryData, setFactoryData] = useState(null);
-  const { activeDisruption, triggerDisruption, resetDisruption } = useDisruption();
-
-  // Orders State (Mocked)
-  const [orders, setOrders] = useState([
-    { id: "TX-2048", product: "Cotton Twill", qty: "12,000 m", deadline: "Sep 04", prod: 72, risk: 12, status: "ON TRACK" },
-    { id: "TX-3011", product: "Polyester Blend", qty: "8,500 m", deadline: "Sep 06", prod: 45, risk: 8, status: "ON TRACK" },
-    { id: "TX-4402", product: "Linen Yarn", qty: "5,000 m", deadline: "Sep 12", prod: 10, risk: 5, status: "ON TRACK" },
-  ]);
-
-  // Factory Metrics State
-  const [metrics, setMetrics] = useState({
-    machineUptime: 97.2,
-    workerAvailability: 94,
-    powerStatus: "STABLE",
-    capacityUtil: 78,
-    orderLoad: 82,
-    factoryRisk: 12
-  });
+  const { activeDisruption, triggerDisruption, resetDisruption, currentConfig, simulationState, stepStatus } = useDisruption();
 
   useEffect(() => {
     // On load, fetch current global state of the factory
     const f = factories.find(f => f.id === TARGET_FACTORY_ID);
     if (f) {
       setFactoryData({ ...f });
-      // Removed setActiveDisruption local call
     }
   }, []);
 
   const handleSimulateDisruption = (type) => {
-    // 1. Mutate Global Data via Context
     triggerDisruption(type);
-    
-    // Simulate local update
-    const f = factories.find(fac => fac.id === TARGET_FACTORY_ID);
-    if(f) setFactoryData({ ...f });
-
-    // 2. Update Local Dashboard Metrics
-    if (type === "Power Cut") {
-      setMetrics({
-        machineUptime: 62.4,
-        workerAvailability: 94,
-        powerStatus: "DISRUPTED",
-        capacityUtil: 50,
-        orderLoad: 82,
-        factoryRisk: 78
-      });
-      
-      setOrders(prev => prev.map(o => 
-        o.id === "TX-2048" ? { ...o, risk: 72, status: "AT RISK" } : 
-        o.id === "TX-3011" ? { ...o, risk: 65, status: "AT RISK" } : o
-      ));
-    } else if (type === "Worker Shortage") {
-      setMetrics({
-        ...metrics,
-        workerAvailability: 64,
-        capacityUtil: 60,
-        factoryRisk: 45
-      });
-      setOrders(prev => prev.map(o => 
-        o.id === "TX-2048" ? { ...o, risk: 55, status: "DELAYED" } : o
-      ));
-    } else {
-      // General disruption mapping
-      setMetrics({
-        ...metrics,
-        capacityUtil: 40,
-        machineUptime: 45,
-        factoryRisk: 85
-      });
-      setOrders(prev => prev.map(o => ({ ...o, risk: 80, status: "AT RISK" })));
-    }
   };
 
   const handleReset = () => {
     resetDisruption();
-    
-    // Simulate local update
-    const f = factories.find(fac => fac.id === TARGET_FACTORY_ID);
-    if(f) setFactoryData({ ...f });
-    setMetrics({
-      machineUptime: 97.2,
-      workerAvailability: 94,
-      powerStatus: "STABLE",
-      capacityUtil: 78,
-      orderLoad: 82,
-      factoryRisk: 12
-    });
-    setOrders(prev => prev.map(o => ({ ...o, risk: Math.floor(Math.random()*15), status: "ON TRACK" })));
   };
 
   if (!factoryData) return null;
 
-  const isDisrupted = factoryData.status !== "OPERATIONAL";
+  const isDisrupted = activeDisruption !== null;
+
+  // Base Orders
+  const baseOrders = [
+    { id: "TX-2048", product: "Cotton Twill", qty: "12,000 m", deadline: "Sep 04", prod: 72 },
+    { id: "TX-3011", product: "Polyester Blend", qty: "8,500 m", deadline: "Sep 06", prod: 45 },
+    { id: "TX-4402", product: "Linen Yarn", qty: "5,000 m", deadline: "Sep 12", prod: 10 },
+  ];
+
+  // Dynamically calculate metrics based on currentConfig
+  let metrics = {
+    machineUptime: 97.2,
+    workerAvailability: 94,
+    powerStatus: "STABLE",
+    capacityUtil: 78,
+    orderLoad: 82,
+    factoryRisk: 12
+  };
+  
+  let orders = baseOrders.map(o => ({ ...o, risk: 8, status: "ON TRACK" }));
+
+  if (isDisrupted && currentConfig) {
+    if (activeDisruption === "powerCut") {
+      metrics = { ...metrics, machineUptime: 62.4, powerStatus: "DISRUPTED", capacityUtil: 50, factoryRisk: 78 };
+      orders[0] = { ...orders[0], risk: 72, status: "AT RISK" };
+      orders[1] = { ...orders[1], risk: 65, status: "AT RISK" };
+    } else if (activeDisruption === "machineBreakdown") {
+      metrics = { ...metrics, machineUptime: 45.0, capacityUtil: 60, factoryRisk: 61 };
+      orders[0] = { ...orders[0], risk: 61, status: "AT RISK" };
+      orders[1] = { ...orders[1], risk: 50, status: "DELAYED" };
+    } else if (activeDisruption === "workerShortage") {
+      metrics = { ...metrics, workerAvailability: 64, capacityUtil: 60, factoryRisk: 45 };
+      orders[0] = { ...orders[0], risk: 55, status: "DELAYED" };
+    } else {
+      metrics = { ...metrics, capacityUtil: 40, machineUptime: 45, factoryRisk: 85 };
+      orders = orders.map(o => ({ ...o, risk: 80, status: "AT RISK" }));
+    }
+    
+    if (simulationState === "RESOLVED") {
+      metrics.factoryRisk = currentConfig.recovery.riskScore || 20;
+      metrics.powerStatus = "STABLE";
+      orders = orders.map(o => ({ ...o, risk: Math.max(5, o.risk - 40), status: "RECOVERING" }));
+    }
+  }
 
   return (
     <RoleGuard allowedRole="owner">
@@ -147,10 +118,15 @@ export default function FactoryOwnerDashboard() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            {isDisrupted ? (
+            {isDisrupted && simulationState !== "RESOLVED" ? (
               <div className="flex items-center gap-2 bg-red-950/40 border border-red-900 text-red-400 px-4 py-2 rounded-lg animate-pulse-red">
                 <AlertTriangle className="h-5 w-5" />
                 <span className="font-semibold text-sm tracking-wide">SYSTEM DISRUPTION</span>
+              </div>
+            ) : isDisrupted && simulationState === "RESOLVED" ? (
+              <div className="flex items-center gap-2 bg-emerald-950/40 border border-emerald-900 text-emerald-400 px-4 py-2 rounded-lg">
+                <CheckIcon className="h-5 w-5" />
+                <span className="font-semibold text-sm tracking-wide">RECOVERY COMPLETE</span>
               </div>
             ) : (
               <div className="flex items-center gap-2 bg-emerald-950/40 border border-emerald-900 text-emerald-400 px-4 py-2 rounded-lg">
@@ -176,7 +152,7 @@ export default function FactoryOwnerDashboard() {
               <div className="flex flex-col gap-5">
                 <MetricRow label="Machine Uptime" value={`${metrics.machineUptime}%`} icon={<Factory className="h-4 w-4" />} isBad={metrics.machineUptime < 80} />
                 <MetricRow label="Worker Availability" value={`${metrics.workerAvailability}%`} icon={<Users className="h-4 w-4" />} isBad={metrics.workerAvailability < 80} />
-                <MetricRow label="Power Status" value={metrics.powerStatus} icon={<Zap className="h-4 w-4" />} isBad={metrics.powerStatus === "DISRUPTED"} highlight />
+                <MetricRow label="Power Status" value={metrics.powerStatus} icon={<Zap className="h-4 w-4" />} isBad={metrics.powerStatus === "DISRUPTED"} highlight={metrics.powerStatus === "STABLE"} />
                 <MetricRow label="Capacity Utilization" value={`${metrics.capacityUtil}%`} icon={<Activity className="h-4 w-4" />} isBad={metrics.capacityUtil < 60} />
                 <MetricRow label="Order Load" value={`${metrics.orderLoad}%`} icon={<Package className="h-4 w-4" />} />
                 <div className="pt-2 mt-2 border-t border-slate-800">
@@ -215,8 +191,51 @@ export default function FactoryOwnerDashboard() {
 
           </div>
 
-          {/* Right Column: Active Orders */}
-          <div className="lg:col-span-2 flex flex-col">
+          {/* Right Column: Active Orders & AI Timeline */}
+          <div className="lg:col-span-2 flex flex-col gap-8">
+            
+            {/* Active Disruption Banner (if any) */}
+            {isDisrupted && currentConfig && (
+              <div className="bg-red-950/20 border border-red-900/50 rounded-xl p-5 shadow-2xl card-enter">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-900/40 text-red-400 relative">
+                    {simulationState !== "RESOLVED" && <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-20"></span>}
+                    <AlertTriangle className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-red-400 tracking-tight flex items-center gap-2">
+                      ACTIVE DISRUPTION: {currentConfig.title}
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                      <div>
+                        <p className="text-xs text-red-500/80 uppercase">Severity</p>
+                        <p className="text-sm font-semibold text-red-300">{currentConfig.severity}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-red-500/80 uppercase">Expected Downtime</p>
+                        <p className="text-sm font-semibold text-red-300">{currentConfig.delayHours} hours</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-red-500/80 uppercase">Affected Orders</p>
+                        <p className="text-sm font-semibold text-red-300">{currentConfig.ordersAffected}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-red-500/80 uppercase">Lost Capacity</p>
+                        <p className="text-sm font-semibold text-red-300">{currentConfig.affectedUnits.toLocaleString()} units</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* AI Response Pipeline (Visible only when disrupted) */}
+            {isDisrupted && (
+              <div className="card-enter" style={{animationDelay: '0.1s'}}>
+                 <AIResponsePipeline />
+              </div>
+            )}
+
             <div className="bg-[#111826] border border-slate-800 rounded-xl flex-1 shadow-2xl overflow-hidden flex flex-col card-enter" style={{animationDelay: '0.3s'}}>
               <div className="p-5 border-b border-slate-800">
                 <h2 className="text-sm font-semibold uppercase tracking-widest text-slate-400 flex items-center gap-2">
@@ -284,6 +303,14 @@ export default function FactoryOwnerDashboard() {
 }
 
 // Subcomponents
+
+function CheckIcon(props) {
+  return (
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3} {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+    </svg>
+  );
+}
 
 function MetricRow({ label, value, icon, isBad, highlight }) {
   return (

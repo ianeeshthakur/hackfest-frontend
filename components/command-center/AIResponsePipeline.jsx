@@ -1,9 +1,23 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { AIResponseStep } from "./AIResponseStep";
 import { useDisruption } from "@/lib/disruptionContext";
+import { useAudioPlayer } from "@/lib/voice/useAudioPlayer";
 
 export function AIResponsePipeline() {
   const { currentConfig, simulationState, stepStatus, currentSubStepIndex, subStepStatus } = useDisruption();
+  const { say } = useAudioPlayer();
+
+  useEffect(() => {
+    if (simulationState === "DETECTING" && stepStatus === "ACTIVE" && currentSubStepIndex === -1) {
+       say(`The ${currentConfig?.type === "powerCut" ? "power outage" : currentConfig?.title.toLowerCase()} at Factory F-020 has been detected. I'm checking its impact on your active orders.`);
+    } else if (simulationState === "EVALUATING" && stepStatus === "ACTIVE" && currentSubStepIndex === -1) {
+       say("I'm evaluating the affected orders and production capacity.");
+    } else if (simulationState === "ACTION" && stepStatus === "ACTIVE" && currentSubStepIndex === -1) {
+       say("I've found recovery options and I'm comparing available capacity.");
+    } else if (simulationState === "RESOLVED" && stepStatus === "ACTIVE" && currentSubStepIndex === -1) {
+       say("The disruption has been resolved and affected orders are back on track.");
+    }
+  }, [simulationState, stepStatus, currentConfig, currentSubStepIndex, say]);
 
   const getStepState = (stepName) => {
     if (simulationState === "IDLE") return "UPCOMING";

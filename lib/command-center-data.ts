@@ -392,4 +392,11 @@ export const NAV_ITEMS: NavItem[] = [
     iconName: "GitMerge",
     variant: "ghost",
   },
+  {
+    id: "nav-audit",
+    label: "Decisions & Audit",
+    href: "/decisions-audit",
+    iconName: "ClipboardList",
+    variant: "ghost",
+  },
 ];

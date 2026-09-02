@@ -15,6 +15,7 @@ import {
   Settings,
   Zap,
   Map,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS } from "@/lib/command-center-data";
@@ -29,6 +30,7 @@ const iconMap: Record<string, React.ElementType> = {
   ShieldCheck,
   Settings,
   Map,
+  ClipboardList,
 };
 
 export function Sidebar() {

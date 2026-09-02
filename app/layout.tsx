@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, Inter, IBM_Plex_Mono } from "next/font/google";
+import { AuditProvider } from "@/lib/auditContext";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -40,7 +41,9 @@ export default function RootLayout({
       className={`${spaceGrotesk.variable} ${inter.variable} ${ibmPlexMono.variable} dark`}
     >
       <body className="min-h-screen bg-bg text-slate-100 font-body antialiased selection:bg-teal selection:text-bg">
-        {children}
+        <AuditProvider>
+          {children}
+        </AuditProvider>
       </body>
     </html>
   );

@@ -7,7 +7,9 @@ import { Sparkles, Clock, DollarSign, ShieldAlert, CheckCircle2, ArrowRight, Bar
 import { RoleGuard } from "@/components/ui/RoleGuard";
 import Link from "next/link";
 
-const SCENARIOS = [
+import { useDisruption } from "@/lib/disruptionContext";
+
+const DEFAULT_SCENARIOS = [
   {
     id: "wait",
     label: "OPTION A",
@@ -80,6 +82,181 @@ const SCENARIOS = [
   }
 ];
 
+function getDynamicScenarios(disruption) {
+  if (!disruption) return DEFAULT_SCENARIOS;
+
+  const baseDelay = disruption.delayHours || 9;
+  const baseRisk = disruption.riskScore || 72;
+
+  // Generate options based on type
+  switch (disruption.type) {
+    case "workerShortage":
+      return [
+        {
+          id: "wait", label: "OPTION A", name: "WAIT",
+          description: "Do nothing and absorb the delay.",
+          delay: `+${baseDelay}h`, delaySortVal: baseDelay,
+          cost: "₹0", costSortVal: 0,
+          risk: baseRisk, confidence: 85, recommended: false, color: "red",
+          factors: ["No direct cost"], downsides: ["Maximum delay", "SLA breach risk"]
+        },
+        {
+          id: "reschedule", label: "OPTION B", name: "RESCHEDULE",
+          description: "Prioritize critical orders and shift production to another available line.",
+          delay: `+${Math.max(1, Math.round(baseDelay * 0.5))}h`, delaySortVal: baseDelay * 0.5,
+          cost: "+₹2,500", costSortVal: 2500,
+          risk: Math.round(baseRisk * 0.6), confidence: 88, recommended: false, color: "amber",
+          factors: ["Internal capacity reallocation", "Minimal cost"], downsides: ["Disrupts other minor orders"]
+        },
+        {
+          id: "reallocate", label: "OPTION C", name: "REALLOCATE CAPACITY",
+          description: "Hire temporary contract workforce or reallocate available workforce/capacity.",
+          delay: "+1h", delaySortVal: 1,
+          cost: "+₹8,000", costSortVal: 8000,
+          risk: Math.round(baseRisk * 0.3), confidence: 92, recommended: true, color: "emerald",
+          factors: ["Fastest recovery", "Maintains original line throughput"], downsides: ["Higher operational cost"]
+        }
+      ];
+    case "powerCut":
+      return [
+        {
+          id: "wait", label: "OPTION A", name: "WAIT",
+          description: "Wait for grid restoration.",
+          delay: `+${baseDelay}h`, delaySortVal: baseDelay,
+          cost: "₹0", costSortVal: 0,
+          risk: baseRisk, confidence: 90, recommended: false, color: "red",
+          factors: ["Zero action required"], downsides: ["Uncertain grid stability"]
+        },
+        {
+          id: "backup", label: "OPTION B", name: "BACKUP GENERATION",
+          description: "Run on backup generators at reduced capacity.",
+          delay: `+${Math.max(1, Math.round(baseDelay * 0.6))}h`, delaySortVal: baseDelay * 0.6,
+          cost: "+₹15,000", costSortVal: 15000,
+          risk: Math.round(baseRisk * 0.7), confidence: 95, recommended: false, color: "amber",
+          factors: ["Immediate response"], downsides: ["High fuel cost", "Not sustainable long-term"]
+        },
+        {
+          id: "shift", label: "OPTION C", name: "SHIFT FACILITY",
+          description: "Shift production to another facility in the same cluster.",
+          delay: "+2h", delaySortVal: 2,
+          cost: "+₹22,000", costSortVal: 22000,
+          risk: Math.round(baseRisk * 0.3), confidence: 89, recommended: true, color: "emerald",
+          factors: ["Bypasses local grid issues fully", "Maintains timeline"], downsides: ["High logistical overhead"]
+        }
+      ];
+    case "PORT_CONGESTION":
+      return [
+        {
+          id: "wait", label: "OPTION A", name: "WAIT",
+          description: "Hold vessel at anchorage until berthing window opens.",
+          delay: `+${baseDelay}h`, delaySortVal: baseDelay,
+          cost: "₹0", costSortVal: 0,
+          risk: baseRisk, confidence: 95, recommended: false, color: "red",
+          factors: ["No rerouting cost"], downsides: ["Extreme delay", "High inventory risk"]
+        },
+        {
+          id: "alternate_port", label: "OPTION B", name: "ALTERNATE PORT",
+          description: "Reroute to Mundra Port and use overland transport.",
+          delay: `+${Math.max(24, Math.round(baseDelay * 0.4))}h`, delaySortVal: 24,
+          cost: "+$3,500", costSortVal: 3500,
+          risk: Math.round(baseRisk * 0.5), confidence: 88, recommended: true, color: "emerald",
+          factors: ["Avoids congestion completely", "Known cost"], downsides: ["Additional trucking required"]
+        },
+        {
+          id: "air_freight", label: "OPTION C", name: "AIR FREIGHT PRIORITY",
+          description: "Split shipment: air freight priority units, wait for the rest.",
+          delay: "+48h", delaySortVal: 48,
+          cost: "+$12,000", costSortVal: 12000,
+          risk: Math.round(baseRisk * 0.2), confidence: 92, recommended: false, color: "amber",
+          factors: ["Saves critical orders"], downsides: ["Extremely high cost"]
+        }
+      ];
+    case "rawMaterialDelay":
+      return [
+        {
+          id: "wait", label: "OPTION A", name: "WAIT",
+          description: "Wait for delayed material shipment.",
+          delay: `+${baseDelay}h`, delaySortVal: baseDelay,
+          cost: "₹0", costSortVal: 0,
+          risk: baseRisk, confidence: 90, recommended: false, color: "red",
+          factors: ["No sourcing effort"], downsides: ["Stalls production lines completely"]
+        },
+        {
+          id: "reallocate", label: "OPTION B", name: "INVENTORY REALLOCATION",
+          description: "Reallocate inventory from non-critical orders to bridge the gap.",
+          delay: `+${Math.max(1, Math.round(baseDelay * 0.3))}h`, delaySortVal: 1,
+          cost: "₹0", costSortVal: 0,
+          risk: Math.round(baseRisk * 0.6), confidence: 85, recommended: false, color: "amber",
+          factors: ["No direct financial cost"], downsides: ["Delays lower priority orders later"]
+        },
+        {
+          id: "alternate_supplier", label: "OPTION C", name: "ALTERNATE SUPPLIER",
+          description: "Engage pre-approved local alternate supplier for partial sourcing.",
+          delay: "+2h", delaySortVal: 2,
+          cost: "+₹14,500", costSortVal: 14500,
+          risk: Math.round(baseRisk * 0.2), confidence: 94, recommended: true, color: "emerald",
+          factors: ["Restores production quickly", "Approved quality"], downsides: ["Premium spot-buy pricing"]
+        }
+      ];
+    case "GEOPOLITICAL_EVENT":
+      return [
+        {
+          id: "wait", label: "OPTION A", name: "HOLD ANCHORAGE",
+          description: "Hold at safe anchorage until route is clear.",
+          delay: "TBD", delaySortVal: 999,
+          cost: "$0", costSortVal: 0,
+          risk: baseRisk, confidence: 50, recommended: false, color: "red",
+          factors: ["Avoids active conflict zone"], downsides: ["Indefinite delay"]
+        },
+        {
+          id: "air_freight", label: "OPTION B", name: "AIR FREIGHT",
+          description: "Recall shipment and air freight critical cargo.",
+          delay: "+72h", delaySortVal: 72,
+          cost: "+$45,000", costSortVal: 45000,
+          risk: Math.round(baseRisk * 0.6), confidence: 85, recommended: false, color: "amber",
+          factors: ["Fastest delivery"], downsides: ["Astronomical cost", "Volume restricted"]
+        },
+        {
+          id: "divert", label: "OPTION C", name: "DIVERT ROUTE",
+          description: "Divert via Cape of Good Hope.",
+          delay: `+${baseDelay}h`, delaySortVal: baseDelay,
+          cost: "+$8,500", costSortVal: 8500,
+          risk: Math.round(baseRisk * 0.4), confidence: 95, recommended: true, color: "emerald",
+          factors: ["Safest maritime route", "Certain ETA"], downsides: ["Adds 14+ days transit"]
+        }
+      ];
+    case "logisticsDelay":
+      return [
+        {
+          id: "wait", label: "OPTION A", name: "WAIT",
+          description: "Proceed with original delayed carrier.",
+          delay: `+${baseDelay}h`, delaySortVal: baseDelay,
+          cost: "₹0", costSortVal: 0,
+          risk: baseRisk, confidence: 90, recommended: false, color: "red",
+          factors: ["No disruption to paperwork"], downsides: ["Accepts full delay penalty"]
+        },
+        {
+          id: "split", label: "OPTION B", name: "SPLIT SHIPMENT",
+          description: "Split shipment and expedite 20% of critical volume.",
+          delay: `+${Math.round(baseDelay * 0.5)}h`, delaySortVal: baseDelay * 0.5,
+          cost: "+₹9,000", costSortVal: 9000,
+          risk: Math.round(baseRisk * 0.5), confidence: 88, recommended: false, color: "amber",
+          factors: ["Saves highest priority items"], downsides: ["Splits inventory tracking"]
+        },
+        {
+          id: "reroute", label: "OPTION C", name: "ALTERNATE CARRIER",
+          description: "Cross-dock and switch to alternate premium carrier route.",
+          delay: "+12h", delaySortVal: 12,
+          cost: "+₹16,000", costSortVal: 16000,
+          risk: Math.round(baseRisk * 0.3), confidence: 92, recommended: true, color: "emerald",
+          factors: ["Bypasses current bottleneck", "Predictable new ETA"], downsides: ["Requires immediate cross-docking"]
+        }
+      ];
+    default:
+      return DEFAULT_SCENARIOS;
+  }
+}
+
 const COLOR_MAP = {
   red: {
     border: "border-red-800/40",
@@ -115,9 +292,19 @@ const COMPARISON_ROWS = [
 ];
 
 export default function RecoveryScenarios() {
-  const [selected, setSelected] = useState("reroute"); // AI-recommended default
+  const { currentConfig } = useDisruption();
+  const scenarios = getDynamicScenarios(currentConfig);
+  
+  // Find recommended scenario ID, fallback to last item or index 0
+  const recommendedId = scenarios.find(s => s.recommended)?.id || scenarios[scenarios.length - 1]?.id || "wait";
+  const [selected, setSelected] = useState(recommendedId);
 
-  const selectedScenario = SCENARIOS.find(s => s.id === selected);
+  // If disruption changes, we might want to update selected to the new recommendation
+  React.useEffect(() => {
+    setSelected(scenarios.find(s => s.recommended)?.id || scenarios[scenarios.length - 1]?.id || "wait");
+  }, [currentConfig]);
+
+  const selectedScenario = scenarios.find(s => s.id === selected) || scenarios[0];
 
   return (
     <RoleGuard allowedRole="owner">
@@ -136,7 +323,11 @@ export default function RecoveryScenarios() {
                 </span>
                 <div>
                   <h1 className="text-2xl font-bold tracking-tight text-white">Recovery Scenarios</h1>
-                  <p className="text-slate-500 text-sm mt-0.5">AI-generated options for Case TL-4821 — Order TX-2048</p>
+                  <p className="text-slate-500 text-sm mt-0.5">
+                    {currentConfig 
+                      ? `AI-generated options for ${currentConfig.title}` 
+                      : "AI-generated options for Case TL-4821"}
+                  </p>
                 </div>
               </div>
               {selected && (
@@ -168,7 +359,7 @@ export default function RecoveryScenarios() {
 
           {/* Option Cards */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            {SCENARIOS.map((scenario) => {
+            {scenarios.map((scenario) => {
               const c = COLOR_MAP[scenario.color];
               const isSelected = selected === scenario.id;
               return (
@@ -276,7 +467,7 @@ export default function RecoveryScenarios() {
                 <thead>
                   <tr className="border-b border-slate-800">
                     <th className="text-left px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider w-32">Metric</th>
-                    {SCENARIOS.map((s) => {
+                    {scenarios.map((s) => {
                       const isActive = selected === s.id;
                       return (
                         <th key={s.id} className={`px-6 py-4 text-center transition-colors ${isActive ? 'bg-slate-800/60' : ''}`}>
@@ -321,7 +512,7 @@ export default function RecoveryScenarios() {
                   ].map((row, idx) => (
                     <tr key={row.label} className={`border-b border-slate-800/50 ${idx % 2 === 0 ? '' : 'bg-slate-900/20'}`}>
                       <td className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{row.label}</td>
-                      {SCENARIOS.map((s) => {
+                      {scenarios.map((s) => {
                         const isActive = selected === s.id;
                         return (
                           <td key={s.id} className={`px-6 py-4 text-center transition-colors ${isActive ? 'bg-slate-800/40' : ''}`}>
@@ -334,7 +525,7 @@ export default function RecoveryScenarios() {
                   {/* Action row */}
                   <tr>
                     <td className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Action</td>
-                    {SCENARIOS.map((s) => (
+                    {scenarios.map((s) => (
                       <td key={s.id} className={`px-6 py-4 text-center ${selected === s.id ? 'bg-slate-800/40' : ''}`}>
                         <button
                           onClick={() => setSelected(s.id)}

@@ -101,7 +101,7 @@ export function ActiveDisruption() {
         <div className="pt-4 border-t border-slate-100">
           <div className="flex gap-2">
             <Link 
-              href="/owner-recovery" 
+              href="/recovery" 
               className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2.5 px-4 rounded-lg transition-colors shadow-sm text-center"
             >
               Review Recovery Plan

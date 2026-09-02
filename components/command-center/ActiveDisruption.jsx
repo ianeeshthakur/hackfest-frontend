@@ -59,7 +59,7 @@ export function ActiveDisruption() {
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="flex flex-col p-3 rounded-lg bg-slate-50 border border-slate-100">
           <span className="text-[10px] uppercase font-bold text-slate-500 mb-1">Risk</span>
-          <ExplainableRiskScore score={riskScore} type="Disruption" className="-ml-1" />
+          <ExplainableRiskScore score={riskScore} type="Disruption" factors={currentConfig?.riskFactors} className="-ml-1" />
         </div>
         <div className="flex flex-col p-3 rounded-lg bg-slate-50 border border-slate-100">
           <span className="text-[10px] uppercase font-bold text-slate-500 mb-1">Confidence</span>

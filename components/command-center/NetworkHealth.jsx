@@ -104,7 +104,7 @@ export function NetworkHealth() {
       <div className="pt-4 border-t border-slate-100 mb-6 flex justify-between relative z-10">
         <div className="flex flex-col">
           <span className="text-[10px] text-slate-500 uppercase font-semibold mb-1">Risk Score</span>
-          <ExplainableRiskScore score={riskScore} type="Network" />
+          <ExplainableRiskScore score={riskScore} type="Network" factors={currentConfig?.riskFactors} />
         </div>
         {currentConfig.powerStatus && (
           <div className="flex flex-col items-end">

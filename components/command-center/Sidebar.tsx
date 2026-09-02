@@ -3,6 +3,7 @@
 import React from "react";
 import { ThreadlineAssistant } from "@/components/ui/ThreadlineAssistant";
 import { useRole, getActiveNav } from "@/lib/roleContext";
+import { useDisruption } from "@/lib/disruptionContext";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -44,7 +45,12 @@ const iconMap: Record<string, React.ElementType> = {
 export function Sidebar() {
   const pathname = usePathname();
   const { role } = useRole();
+  const { currentConfig, simulationState } = useDisruption();
+  
   const navItems = getActiveNav(role) as Array<{ id: string, label: string, href: string, iconName: string, badge?: string }>;
+
+  const hasActiveDisruption = currentConfig && simulationState !== "IDLE";
+  const isHighSeverity = currentConfig?.severity?.includes("HIGH") || currentConfig?.severity === "CRITICAL";
 
   return (
     <aside className="flex h-screen w-[220px] flex-shrink-0 flex-col border-r border-slate-200 bg-white">
@@ -69,6 +75,8 @@ export function Sidebar() {
           {navItems.map((item) => {
             const Icon = iconMap[item.iconName] || LayoutDashboard;
             const isActive = pathname === item.href;
+            const isCommandCenter = item.id === "command-center";
+            
             return (
               <Link
                 key={item.id}
@@ -88,7 +96,21 @@ export function Sidebar() {
                       : "text-slate-400 group-hover:text-slate-600"
                   )}
                 />
-                <span className="flex-1">{item.label}</span>
+                <span className="flex-1 flex items-center gap-2">
+                  {item.label}
+                  {isCommandCenter && hasActiveDisruption && (
+                    <span className="relative flex h-2.5 w-2.5 items-center justify-center">
+                      {isHighSeverity && (
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
+                      )}
+                      <span className={cn(
+                        "relative inline-flex rounded-full h-2 w-2",
+                        isHighSeverity ? "bg-red-500" : "bg-amber-500"
+                      )}></span>
+                    </span>
+                  )}
+                </span>
+                
                 {item.badge && (
                   <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-100 px-1.5 text-[11px] font-semibold text-red-600">
                     {item.badge}

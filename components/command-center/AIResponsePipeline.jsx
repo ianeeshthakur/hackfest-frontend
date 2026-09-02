@@ -10,7 +10,7 @@ export function AIResponsePipeline() {
     if (simulationState === "IDLE") return "UPCOMING";
     if (simulationState === "RESOLVED") return "COMPLETED";
 
-    const order = ["DETECTING", "EVALUATING", "REROUTING", "RESOLVED"];
+    const order = ["DETECTING", "EVALUATING", "ACTION", "RESOLVED"];
     const currentIndex = order.indexOf(simulationState);
     const thisIndex = order.indexOf(stepName);
 
@@ -38,22 +38,25 @@ export function AIResponsePipeline() {
         </span>
       );
     }
-    if (simulationState === "REROUTING") {
+    if (simulationState === "ACTION") {
       return (
         <span>
-          <strong className="text-blue-700">AI is working:</strong> {t.rerouting}
+          <strong className="text-blue-700">AI is working:</strong> {t.action}
         </span>
       );
     }
     if (simulationState === "RESOLVED") {
       return (
         <span>
-          <strong className="text-emerald-700">AI response:</strong> {t.mitigated}
+          <strong className="text-emerald-700">AI response:</strong> {t.resolved}
         </span>
       );
     }
     return "";
   };
+
+  const actionLabel = currentConfig?.timelineStages?.action || "Rerouting";
+  const resolvedLabel = currentConfig?.timelineStages?.resolved || "Resolved";
 
   return (
     <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
@@ -67,8 +70,8 @@ export function AIResponsePipeline() {
       <div className="flex w-full mb-8">
         <AIResponseStep label="Detecting" state={getStepState("DETECTING")} isLast={false} />
         <AIResponseStep label="Evaluating" state={getStepState("EVALUATING")} isLast={false} />
-        <AIResponseStep label="Rerouting" state={getStepState("REROUTING")} isLast={false} />
-        <AIResponseStep label="Resolved" state={getStepState("RESOLVED")} isLast={true} />
+        <AIResponseStep label={actionLabel} state={getStepState("ACTION")} isLast={false} />
+        <AIResponseStep label={resolvedLabel} state={getStepState("RESOLVED")} isLast={true} />
       </div>
 
       <div className={`p-4 rounded-lg text-[13px] leading-relaxed transition-colors duration-500 ${

@@ -8,25 +8,31 @@ const DisruptionContext = createContext(null);
 export const disruptionConfigs = {
   powerCut: {
     type: "powerCut",
-    title: "POWER CUT DETECTED",
+    title: "POWER OUTAGE DETECTED",
     severity: "HIGH",
     description: "Grid power interruption affecting production capacity.",
     riskScore: 72,
-    confidence: 94,
+    confidence: 91,
     delayHours: 9,
     totalUnits: 50000,
-    availableUnits: 36000,
-    affectedUnits: 14000,
-    unitsAtRisk: 12000,
-    ordersAffected: 2,
+    availableUnits: 32000, // currentCapacity
+    affectedUnits: 18000, // lostCapacity
+    unitsAtRisk: 4500, // orderExposure
+    ordersAffected: 3,
+    timelineStages: {
+      detecting: "Detecting",
+      evaluating: "Evaluating",
+      action: "Capacity Reallocation",
+      resolved: "Monitoring" // Wait, user said: "Power Cut: Detecting -> Evaluating -> Capacity Reallocation -> Resolved" 
+      // Actually user said: "Detecting -> Evaluating -> Capacity Reallocation -> Resolved" in Section 8. 
+    },
     timeline: {
       detecting: "Power interruption detected",
       evaluating: "Calculating production capacity impact",
-      rerouting: "Identifying available production capacity",
-      mitigated: "Affected orders reassigned"
+      action: "Identifying available production capacity",
+      resolved: "Affected orders reassigned"
     },
-    aiResponse: "Grid power interruption has reduced production capacity. ThreadLine has identified available alternate production capacity and is evaluating affected orders for recovery.",
-    // Metric variants
+    aiResponse: "Production capacity reduced due to a power availability disruption. Downstream orders are being evaluated for delay exposure.",
     powerStatus: "DISRUPTED",
     buyerView: {
       title: "PRODUCTION DELAY RISK",
@@ -38,7 +44,14 @@ export const disruptionConfigs = {
       unitsAtRisk: 1000,
       riskScore: 38,
       delayHours: 2
-    }
+    },
+    riskFactors: [
+      { label: "Production impact", value: 28 },
+      { label: "Delivery proximity", value: 20 },
+      { label: "Capacity reduction", value: 14 },
+      { label: "Inventory exposure", value: 6 },
+      { label: "Network dependency", value: 4 }
+    ]
   },
 
   machineBreakdown: {
@@ -46,33 +59,45 @@ export const disruptionConfigs = {
     title: "MACHINE BREAKDOWN DETECTED",
     severity: "MEDIUM-HIGH",
     description: "Critical weaving equipment is unavailable.",
-    riskScore: 64,
-    confidence: 91,
-    delayHours: 7,
+    riskScore: 61,
+    confidence: 88,
+    delayHours: 6,
     totalUnits: 50000,
-    availableUnits: 35000,
-    affectedUnits: 15000,
-    unitsAtRisk: 13000,
+    availableUnits: 41000,
+    affectedUnits: 9000,
+    unitsAtRisk: 2200,
     ordersAffected: 2,
+    timelineStages: {
+      detecting: "Detecting",
+      evaluating: "Evaluating",
+      action: "Maintenance Recovery",
+      resolved: "Resolved"
+    },
     timeline: {
       detecting: "Machine telemetry anomaly detected",
       evaluating: "Calculating machine capacity loss",
-      rerouting: "Searching for alternate production equipment",
-      mitigated: "Production shifted to available capacity"
+      action: "Searching for alternate production equipment",
+      resolved: "Production shifted to available capacity"
     },
-    aiResponse: "A critical production machine is offline. ThreadLine has identified available alternate production capacity and is reallocating affected production.",
+    aiResponse: "Production has been constrained by a machine interruption. Available production capacity is being reassigned to protect priority orders.",
     machineStatus: "OFFLINE",
     buyerView: {
       title: "PRODUCTION DELAY RISK",
       description: "Your order may arrive later than planned."
     },
     recovery: {
-      availableUnits: 42000,
-      affectedUnits: 8000,
-      unitsAtRisk: 2000,
-      riskScore: 35,
-      delayHours: 3
-    }
+      availableUnits: 48000,
+      affectedUnits: 2000,
+      unitsAtRisk: 500,
+      riskScore: 32,
+      delayHours: 1
+    },
+    riskFactors: [
+      { label: "Production impact", value: 30 },
+      { label: "Delivery proximity", value: 15 },
+      { label: "Capacity reduction", value: 10 },
+      { label: "Maintenance delay", value: 6 }
+    ]
   },
 
   workerShortage: {
@@ -80,33 +105,45 @@ export const disruptionConfigs = {
     title: "WORKER SHORTAGE DETECTED",
     severity: "MEDIUM",
     description: "Workforce availability has fallen below planned production requirements.",
-    riskScore: 58,
+    riskScore: 28,
     confidence: 88,
-    delayHours: 6,
+    delayHours: 1,
     totalUnits: 50000,
-    availableUnits: 40000,
-    affectedUnits: 10000,
-    unitsAtRisk: 8500,
+    availableUnits: 46000,
+    affectedUnits: 4000,
+    unitsAtRisk: 500,
     ordersAffected: 1,
+    timelineStages: {
+      detecting: "Detecting",
+      evaluating: "Evaluating",
+      action: "Rescheduling",
+      resolved: "Resolved"
+    },
     timeline: {
       detecting: "Workforce availability analyzed",
       evaluating: "Calculating production capacity impact",
-      rerouting: "Optimizing production shifts",
-      mitigated: "Orders rescheduled across available capacity"
+      action: "Optimizing production shifts",
+      resolved: "Orders rescheduled across available capacity"
     },
-    aiResponse: "Workforce availability has dropped below the required production level. ThreadLine is optimizing production allocation and rescheduling affected orders.",
+    aiResponse: "Reduced workforce availability has constrained production. Orders are being rescheduled across available capacity.",
     workerAvailability: "76%",
     buyerView: {
       title: "PRODUCTION DELAY RISK",
       description: "Your order may arrive later than planned."
     },
     recovery: {
-      availableUnits: 46000,
-      affectedUnits: 4000,
-      unitsAtRisk: 500,
-      riskScore: 28,
-      delayHours: 1
-    }
+      availableUnits: 49000,
+      affectedUnits: 1000,
+      unitsAtRisk: 0,
+      riskScore: 12,
+      delayHours: 0
+    },
+    riskFactors: [
+      { label: "Production impact", value: 10 },
+      { label: "Delivery proximity", value: 7 },
+      { label: "Capacity reduction", value: 6 },
+      { label: "Network dependency", value: 5 }
+    ]
   },
 
   rawMaterialDelay: {
@@ -114,34 +151,91 @@ export const disruptionConfigs = {
     title: "RAW MATERIAL DELAY DETECTED",
     severity: "MEDIUM",
     description: "Upstream yarn/material shipment has been delayed.",
-    riskScore: 61,
+    riskScore: 58,
     confidence: 90,
-    delayHours: 8,
+    delayHours: 5,
     totalUnits: 50000,
-    availableUnits: 34000,
-    affectedUnits: 16000,
-    unitsAtRisk: 14000,
+    availableUnits: 38000,
+    affectedUnits: 12000,
+    unitsAtRisk: 3200,
     ordersAffected: 2,
+    timelineStages: {
+      detecting: "Detecting",
+      evaluating: "Evaluating",
+      action: "Supplier Recovery",
+      resolved: "Resolved"
+    },
     timeline: {
       detecting: "Supplier shipment delay detected",
       evaluating: "Checking inventory and production impact",
-      rerouting: "Identifying alternate material suppliers",
-      mitigated: "Alternate material source activated"
+      action: "Identifying alternate material suppliers",
+      resolved: "Alternate material source activated"
     },
-    aiResponse: "An upstream material shipment has been delayed and available inventory is insufficient to maintain the current production schedule. ThreadLine has identified alternate suppliers and is evaluating replacement capacity.",
+    aiResponse: "Material availability has fallen below the required production threshold. Supplier recovery and inventory alternatives are being evaluated.",
     materialAvailability: "68%",
-    inventoryCoverage: "1.8 DAYS",
+    inventoryCoverage: "2.4 DAYS",
     buyerView: {
       title: "PRODUCTION DELAY RISK",
       description: "Your order may arrive later than planned."
     },
     recovery: {
-      availableUnits: 41000,
-      affectedUnits: 9000,
-      unitsAtRisk: 3000,
-      riskScore: 32,
+      availableUnits: 45000,
+      affectedUnits: 5000,
+      unitsAtRisk: 1200,
+      riskScore: 28,
+      delayHours: 1
+    },
+    riskFactors: [
+      { label: "Supplier dependency", value: 25 },
+      { label: "Inventory exposure", value: 18 },
+      { label: "Production delay", value: 10 },
+      { label: "Network impact", value: 5 }
+    ]
+  },
+
+  logisticsDelay: {
+    type: "logisticsDelay",
+    title: "LOGISTICS DISRUPTION DETECTED",
+    severity: "HIGH",
+    description: "Transit delay on critical shipment route.",
+    riskScore: 64,
+    confidence: 85,
+    delayHours: 7,
+    totalUnits: 50000,
+    availableUnits: 47000,
+    affectedUnits: 3000,
+    unitsAtRisk: 6800,
+    ordersAffected: 2,
+    timelineStages: {
+      detecting: "Detecting",
+      evaluating: "Evaluating",
+      action: "Route Optimization",
+      resolved: "Resolved"
+    },
+    timeline: {
+      detecting: "Logistics delay detected",
+      evaluating: "Calculating shipment ETA impact",
+      action: "Identifying alternate routes",
+      resolved: "Shipment rerouted"
+    },
+    aiResponse: "A logistics delay has affected shipment timing. Alternative routing and delivery windows are being evaluated.",
+    buyerView: {
+      title: "DELIVERY DELAY RISK",
+      description: "Your shipment may arrive later than planned."
+    },
+    recovery: {
+      availableUnits: 49000,
+      affectedUnits: 1000,
+      unitsAtRisk: 500,
+      riskScore: 30,
       delayHours: 2
-    }
+    },
+    riskFactors: [
+      { label: "Transit delay", value: 30 },
+      { label: "Delivery proximity", value: 20 },
+      { label: "Route availability", value: 10 },
+      { label: "Network impact", value: 4 }
+    ]
   }
 };
 
@@ -151,9 +245,11 @@ export function DisruptionProvider({ children }) {
   const [stepStatus, setStepStatus] = useState("UPCOMING");
 
   const timeoutRef = useRef(null);
+  const stepTimeoutRef = useRef(null);
 
   const clearTimeouts = () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (stepTimeoutRef.current) clearTimeout(stepTimeoutRef.current);
   };
 
   useEffect(() => {
@@ -166,7 +262,7 @@ export function DisruptionProvider({ children }) {
     
     timeoutRef.current = setTimeout(() => {
       setStepStatus("COMPLETING");
-      timeoutRef.current = setTimeout(() => {
+      stepTimeoutRef.current = setTimeout(() => {
         nextStepCallback();
       }, 600);
     }, duration);
@@ -177,7 +273,8 @@ export function DisruptionProvider({ children }) {
     "Power Cut": "powerCut",
     "Machine Breakdown": "machineBreakdown",
     "Worker Shortage": "workerShortage",
-    "Raw Material Delay": "rawMaterialDelay"
+    "Raw Material Delay": "rawMaterialDelay",
+    "Logistics Delay": "logisticsDelay"
   };
 
   const triggerDisruption = (typeDisplay) => {
@@ -188,16 +285,23 @@ export function DisruptionProvider({ children }) {
     simulateDisruption("F-013", typeDisplay);
 
     setActiveDisruption(key);
-    clearTimeouts();
     
-    runStep("DETECTING", 2000, () => {
-      runStep("EVALUATING", 3000, () => {
-        runStep("REROUTING", 4000, () => {
-          setSimulationState("RESOLVED");
-          setStepStatus("COMPLETED");
+    // IMPORTANT: Reset pipeline immediately for the new disruption
+    clearTimeouts();
+    setSimulationState("IDLE");
+    setStepStatus("UPCOMING");
+    
+    // Slight delay to allow UI to catch the IDLE reset before starting new pipeline
+    setTimeout(() => {
+      runStep("DETECTING", 2000, () => {
+        runStep("EVALUATING", 3000, () => {
+          runStep("ACTION", 4000, () => {
+            setSimulationState("RESOLVED");
+            setStepStatus("COMPLETED");
+          });
         });
       });
-    });
+    }, 50);
   };
 
   const resetDisruption = () => {

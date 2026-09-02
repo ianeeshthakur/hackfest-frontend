@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Info } from "lucide-react";
 
-export function ExplainableRiskScore({ score, type = "Risk", className = "" }) {
+export function ExplainableRiskScore({ score, type = "Risk", factors = null, className = "" }) {
   const [isOpen, setIsOpen] = useState(false);
   const popoverRef = useRef(null);
 
@@ -18,20 +18,26 @@ export function ExplainableRiskScore({ score, type = "Risk", className = "" }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Calculate fractions based on the total score and formula:
-  // 30% Disruption, 25% Deadline, 15% Capacity, 15% Supplier, 15% Recovery
-  const disruption = Math.round(score * 0.30);
-  const deadline = Math.round(score * 0.25);
-  const capacity = Math.round(score * 0.15);
-  const supplier = Math.round(score * 0.15);
-  const recovery = Math.round(score * 0.15);
+  // Generate factors if none provided
+  const riskFactors = factors || [
+    { label: "Disruption Severity", value: Math.round(score * 0.30) },
+    { label: "Deadline Proximity", value: Math.round(score * 0.25) },
+    { label: "Capacity Constraint", value: Math.round(score * 0.15) },
+    { label: "Supplier Dependency", value: Math.round(score * 0.15) },
+    { label: "Recovery Difficulty", value: Math.round(score * 0.15) }
+  ];
 
-  // To avoid rounding errors making the sum != score, we adjust the largest weight
-  const sum = disruption + deadline + capacity + supplier + recovery;
+  // Adjust the first factor if there's a rounding mismatch to ensure sum === score
+  const sum = riskFactors.reduce((acc, f) => acc + f.value, 0);
   const diff = score - sum;
-  const finalDisruption = disruption + diff;
+  if (diff !== 0 && riskFactors.length > 0) {
+    riskFactors[0].value += diff;
+  }
 
   const isHighRisk = score > 50;
+  
+  // Colors for the bars
+  const colors = ["bg-red-500", "bg-orange-500", "bg-amber-500", "bg-yellow-500", "bg-blue-500", "bg-indigo-500"];
 
   return (
     <div className={`relative inline-flex items-center gap-2 ${className}`} ref={popoverRef}>
@@ -71,11 +77,16 @@ export function ExplainableRiskScore({ score, type = "Risk", className = "" }) {
 
           {/* Factors */}
           <div className="space-y-3 mb-5">
-            <FactorBar label="Disruption Severity" value={finalDisruption} max={30} color="bg-red-500" delay="0ms" />
-            <FactorBar label="Deadline Proximity" value={deadline} max={25} color="bg-orange-500" delay="100ms" />
-            <FactorBar label="Capacity Constraint" value={capacity} max={15} color="bg-amber-500" delay="200ms" />
-            <FactorBar label="Supplier Dependency" value={supplier} max={15} color="bg-yellow-500" delay="300ms" />
-            <FactorBar label="Recovery Difficulty" value={recovery} max={15} color="bg-blue-500" delay="400ms" />
+            {riskFactors.map((factor, idx) => (
+              <FactorBar 
+                key={idx} 
+                label={factor.label} 
+                value={factor.value} 
+                max={Math.max(30, factor.value)} 
+                color={colors[idx % colors.length]} 
+                delay={`${idx * 100}ms`} 
+              />
+            ))}
           </div>
 
           {/* Total */}
@@ -91,8 +102,7 @@ export function ExplainableRiskScore({ score, type = "Risk", className = "" }) {
               <ul className="text-[11px] text-slate-300 space-y-1.5 leading-tight">
                 {score > 60 && <li className="flex items-start gap-1"><span className="text-red-500 mt-0.5">•</span> High disruption severity</li>}
                 <li className="flex items-start gap-1"><span className="text-red-500 mt-0.5">•</span> Deadline approaching</li>
-                {capacity > 5 && <li className="flex items-start gap-1"><span className="text-red-500 mt-0.5">•</span> Reduced production capacity</li>}
-                {recovery > 5 && <li className="flex items-start gap-1"><span className="text-red-500 mt-0.5">•</span> Limited recovery window</li>}
+                <li className="flex items-start gap-1"><span className="text-red-500 mt-0.5">•</span> Reduced production capacity</li>
               </ul>
             </div>
             <div>
@@ -131,7 +141,7 @@ function FactorBar({ label, value, max, color, delay }) {
     <div>
       <div className="flex justify-between text-[11px] mb-1">
         <span className="text-slate-400">{label}</span>
-        <span className="text-slate-300 font-mono">{value} <span className="text-slate-600">/ {max}</span></span>
+        <span className="text-slate-300 font-mono">+{value}</span>
       </div>
       <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
         <div

@@ -24,6 +24,12 @@ import {
   Sparkles,
 } from "lucide-react";
 import { RoleGuard } from "@/components/ui/RoleGuard";
+import dynamic from "next/dynamic";
+
+const OrderTrackingMap = dynamic(
+  () => import("@/components/ui/OrderTrackingMap"),
+  { ssr: false, loading: () => <div className="h-[250px] w-full bg-slate-100 animate-pulse rounded-xl" /> }
+);
 
 const STATUS_STYLES = {
   ON_TRACK:      { bg: "bg-emerald-50",   border: "border-emerald-200", text: "text-emerald-700",  dot: "bg-emerald-500" },
@@ -303,6 +309,14 @@ export default function BuyerDashboard() {
                           <Row label="Product" value={order.product} />
                           <Row label="Quantity" value={order.quantity} />
                           <Row label="Confidence" value={`${order.confidence}%`} />
+                        </div>
+                      </section>
+
+                      {/* Live Tracking Map */}
+                      <section className="border-t border-slate-100 pt-4">
+                        <Label>Geographic Routing</Label>
+                        <div className="mt-3">
+                          <OrderTrackingMap />
                         </div>
                       </section>
 

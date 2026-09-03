@@ -61,10 +61,7 @@ export function Sidebar() {
         </div>
         <div>
           <span className="font-display text-[15px] font-bold tracking-tight text-slate-900">
-            TextileMesh
-          </span>
-          <span className="font-display text-[15px] font-bold tracking-tight text-blue-600">
-            {" "}AI
+            ThreadLine
           </span>
         </div>
       </div>

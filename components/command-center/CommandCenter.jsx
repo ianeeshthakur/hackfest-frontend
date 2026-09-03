@@ -50,7 +50,7 @@ export function CommandCenter() {
         <div className="flex justify-between items-end mb-8">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 mb-1">
-              TextileMesh AI Command Center
+              ThreadLine Command Center
             </h1>
             <p className="text-[14px] text-slate-500">
               Real-time view of your textile operations. Here's what's happening across your units right now.

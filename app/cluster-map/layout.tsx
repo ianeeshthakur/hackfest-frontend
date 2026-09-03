@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Cluster Map — TextileMesh AI",
+  title: "Cluster Map — ThreadLine",
   description:
     "Real-time interactive map of textile MSME manufacturing clusters across India. Monitor factory status, disruptions, and operational health.",
 };

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Command Center — TextileMesh AI",
+  title: "Command Center — ThreadLine",
   description:
-    "Owner Command Center for TextileMesh AI. Real-time view of your textile production units, disruptions, AI actions, and orders.",
+    "Owner Command Center for ThreadLine. Real-time view of your textile production units, disruptions, AI actions, and orders.",
 };
 
 /**

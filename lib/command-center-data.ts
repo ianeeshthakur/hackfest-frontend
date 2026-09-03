@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// TextileMesh AI — Owner Command Center Mock Data
+// ThreadLine — Owner Command Center Mock Data
 // ─────────────────────────────────────────────────────────────────────────────
 // All values here mirror what the real backend will eventually return.
 // Future integration: replace these with API calls (e.g. POST /factoryagent/{id})

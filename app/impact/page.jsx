@@ -5,57 +5,7 @@ import { Sidebar } from "@/components/command-center/Sidebar";
 import { useRole } from "@/lib/roleContext";
 import { ExplainableRiskScore } from "@/components/ui/ExplainableRiskScore";
 import { Package, X, ArrowRight, AlertTriangle, Clock, BarChart2 } from "lucide-react";
-
-const ORDERS = [
-  {
-    id: "TX-2048",
-    product: "Cotton Twill",
-    qty: "12,000 m",
-    deadline: "Sep 04",
-    risk: 72,
-    delay: "+9h",
-    buyer: "Zara (EU)",
-    prodProgress: 72,
-    inventoryIn: "8,200 m",
-    inventoryRemaining: "3,800 m",
-    status: "AT RISK",
-    recovery: "Reroute to F-X7K92 (Surat Cluster — GOTS Certified)",
-    certificationMatch: "GOTS",
-    alternateCap: "Full capacity available (11,500 m)"
-  },
-  {
-    id: "TX-3011",
-    product: "Polyester Blend",
-    qty: "8,500 m",
-    deadline: "Sep 06",
-    risk: 65,
-    delay: "+6h",
-    buyer: "H&M (IN)",
-    prodProgress: 45,
-    inventoryIn: "3,820 m",
-    inventoryRemaining: "4,680 m",
-    status: "AT RISK",
-    recovery: "Split order across 2 suppliers in Ludhiana Cluster",
-    certificationMatch: "OEKO-TEX",
-    alternateCap: "Partial capacity — split recommended"
-  },
-  {
-    id: "TX-4402",
-    product: "Linen Yarn",
-    qty: "5,000 m",
-    deadline: "Sep 12",
-    risk: 55,
-    delay: "+4h",
-    buyer: "FabIndia (IN)",
-    prodProgress: 10,
-    inventoryIn: "500 m",
-    inventoryRemaining: "4,500 m",
-    status: "DELAYED",
-    recovery: "Expedite yarn procurement from Tier-2 supplier",
-    certificationMatch: "—",
-    alternateCap: "Raw material restock ETA: Sep 3"
-  }
-];
+import { IMPACT_ORDERS as ORDERS } from "@/lib/data/impactOrders";
 
 const TOP_METRICS = [
   { label: "Affected Orders", value: "3", icon: <Package className="h-4 w-4" />, color: "text-red-400" },

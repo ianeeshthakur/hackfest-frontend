@@ -5,6 +5,7 @@ import { ThreadlineAssistant } from "@/components/ui/ThreadlineAssistant";
 import { useRole, getActiveNav } from "@/lib/roleContext";
 import { useDisruption } from "@/lib/disruptionContext";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -56,8 +57,8 @@ export function Sidebar() {
     <aside className="flex h-screen w-[220px] flex-shrink-0 flex-col border-r border-slate-200 bg-white">
       {/* Logo */}
       <div className="flex items-center gap-2.5 border-b border-slate-100 px-5 py-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm">
-          <Zap className="h-4.5 w-4.5" style={{ width: 18, height: 18 }} />
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg overflow-hidden shadow-sm border border-slate-200">
+          <Image src="/threadline-logo.jpg" alt="ThreadLine Logo" width={32} height={32} className="object-cover" />
         </div>
         <div>
           <span className="font-display text-[15px] font-bold tracking-tight text-slate-900">
